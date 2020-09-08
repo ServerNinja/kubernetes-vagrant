@@ -1,0 +1,20 @@
+*.retry
+*.swp
+
+# Certs
+*.pem
+
+.vscode
+vendor
+.idea
+
+# Vagrant
+.vagrant
+
+# Kube admin file
+provisioning/admin.conf
+
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
