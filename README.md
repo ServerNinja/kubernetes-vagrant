@@ -60,8 +60,17 @@ vagrant destroy -f
 
 ```
 export KUBECONFIG=$(PWD)/provisioning/admin.conf
+```
 
-kubectl cluster-info
+```
+$ kubectl version --short | grep Server
+Server Version: v1.19.0
+
+$ kubectl cluster-info
+Kubernetes master is running at https://192.168.1.60:6443
+KubeDNS is running at https://192.168.1.60:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
 ## Some post-install stuff you can do to kick off your cluster's usability
