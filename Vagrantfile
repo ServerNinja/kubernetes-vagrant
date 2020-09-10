@@ -1,29 +1,16 @@
-defaultRouter = "192.168.1.254"
+# Loading Settings from settings.yml file
+require 'yaml'
+settings = YAML.load_file("settings.yml")
 
-dictNodeInfo = {
-  'node0' => {
-      'ip'       => "192.168.1.60",
-      'mac'      => "08002799F0D4",
-      'hostname' => "k8s-master-1",
-      'role'     => "master"
-  },
-  'node1' => {
-      'ip'       => "192.168.1.61",
-      'mac'      => "080027F69436",
-      'hostname' => "k8s-worker-1",
-      'role'     => "worker"
-  },
-  'node2' => { 
-      'ip'       => "192.168.1.62",
-      'mac'      => "080027D8A361",
-      'hostname' => "k8s-worker-2",
-      'role'     => "worker"
-  },
-}
+dictNodeInfo = settings['node_info']
+defaultRouter = settings['default_router']
+bridgeOrder = settings['net_bridge_order']
+kubeSettings = settings['kubernetes'] || {}
 
-bridgeOrder = [
-  "en0: Wi-Fi (Wireless)",
-]
+# Some default settings for the K8s cluster...
+kube_cni = kubeSettings['kube_cni'] || "calico"
+kube_podnet_cidr = kubeSettings['kube_podnet_cidr'] || "172.16.0.0/16"
+kube_service_cidr = kubeSettings['kube_service_cidr'] || "10.96.0.0/12"
 
 ansibleWorkerGroup = []
 ansibleMasterGroup = []
@@ -31,42 +18,50 @@ ansibleMasterGroup = []
 Vagrant.configure(2) do |config|
   #Define the number of nodes to spin up
   N = dictNodeInfo.keys.length()
+  counter = 0
 
-  #Iterate over nodes
-  (1..N).each do |node_id|
-    nid = (node_id - 1)
-    nodename = "node#{nid}"
-    nodeInfo = dictNodeInfo[nodename]
+  dictNodeInfo.each_key do |hostname|
+    counter+=1
+    nodeInfo = dictNodeInfo[hostname]
 
-    config.vm.define nodeInfo['hostname'] do |node|
-
+    config.vm.define hostname do |node|
       if nodeInfo['role'] == "worker"
-        ansibleWorkerGroup.append(nodeInfo['hostname'])
+        ansibleWorkerGroup.append(hostname)
       elsif nodeInfo['role'] == "master"
-        ansibleMasterGroup.append(nodeInfo['hostname'])
+        ansibleMasterGroup.append(hostname)
       end
      
       node.vm.box = "bento/ubuntu-20.04"
       node.vm.provider "virtualbox" do |vb|
-        vb.memory = "4096"
+        vb.memory = nodeInfo['memory'] || 4096
+        vb.cpus = nodeInfo['cpus'] || 1
       end
-      node.vm.hostname = nodeInfo['hostname']
+      node.vm.hostname = hostname
 
       node.vm.network :public_network,
         ip: nodeInfo['ip'],
-        :mac => nodeInfo['mac'],
+        :mac => nodeInfo['mac'] || nil,
         bridge: bridgeOrder,
         hostname: true
 
       node.vm.provision :shell,
         :inline => "ip route delete default 2>&1 >/dev/null || true; ip route add default via #{defaultRouter}"
 
-      if node_id == N
+      if counter == N
         node.vm.provision "ansible" do |ansible|
           ansible.limit    = "all"
           ansible.verbose  = "vv"
           ansible.playbook = "provisioning/playbook.yml"
-          ansible.groups   = {
+
+          ansible.groups = {
+            "all:vars" => {
+              "deploy_user" => "vagrant",
+
+              "kube_cni" => kube_cni,
+              "kube_podnet_cidr" => kube_podnet_cidr,
+              "kube_serice_cidr" => kube_service_cidr
+
+            },
             "workers" => ansibleWorkerGroup,
             "masters" => ansibleMasterGroup
           }

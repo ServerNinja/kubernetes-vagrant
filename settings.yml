@@ -1,0 +1,43 @@
+---
+######## Begin Node Definition ########
+### Define the nodes by their node name, IP, and Role (master or worker).
+# Additional options shown below...
+# NOTE: Currently only supports one master node
+node_info:
+  k8s-master-1:
+      ip: 192.168.1.60
+      #mac: 08002799F0D4 # <=== Optional Mac Address
+      role: master
+      memory: 4096       # <=== Default to 1024 if not defined
+      cpus: 1            # <=== Default to 1 if not defined
+  k8s-worker-1:
+      ip: 192.168.1.61
+      role: worker
+      memory: 4096
+  k8s-worker-2:
+      ip: 192.168.1.62
+      role: worker
+      memory: 4096
+
+######## End Node Definition ########
+
+######## Begin Networking Settings ########
+# NOTE: This project uses bridge networking, which allows your VMs to be fully accessible
+#       on your local network from your computer
+#
+### Define the order of named interfaces you wish to have 
+# VirtualBox try to assign to the bridge
+net_bridge_order:
+  - "en0: Wi-Fi (Wireless)"
+
+### Define the preferred default router you wish to use for yor VMs
+default_router: 192.168.1.254
+######## End Networking Settings ########
+
+######## Begin Kubernetes Settings #######
+kubernetes:
+  kube_cni: calico  # <== Use "calico" (default) or "weave"
+
+  # SDN settings
+  #kube_podnet_cidr: 172.16.0.0/16
+  #kube_service_cidr: 10.96.0.0/12

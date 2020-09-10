@@ -9,39 +9,35 @@
 # IP Addressing / Configuration:
 IMPORTANT: This work exposes your vagrant nodes to the bridged network of your computer. This means that they will run on the same IP subnet / range as your computer.
 
-Edit the Vagrantfile and configure the node info hash at the top to use IP addresses that are friendly with your local network. At this time the "mac" address fields are required but will change in the future.
+Edit the settings.yml file and configure the node settings for each hostname at the top to use IP addresses that are friendly with your local network.
+
+NOTE: Currently this project only supports a single master at this time
 
 Examples
 ```
-dictNodeInfo = {
-  'node0' => {
-      'ip'       => "192.168.1.60",
-      'mac'      => "08002799F0D4",
-      'hostname' => "k8s-master-1",
-      'role'     => "master"
-  },
-  'node1' => {
-      'ip'       => "192.168.1.61",
-      'mac'      => "080027F69436",
-      'hostname' => "k8s-worker-1",
-      'role'     => "worker"
-  },
-  'node2' => {
-      'ip'       => "192.168.1.62",
-      'mac'      => "080027D8A361",
-      'hostname' => "k8s-worker-2",
-      'role'     => "worker"
-  },
-}
+node_info:
+  MasterNode1:
+      ip: 192.168.1.60
+      #mac: 08002799F0D4 # <=== Optional Mac Address
+      role: master       # <=== Must be either "master" or "worker"
+      memory: 4096       # <=== Default to 1024 if not defined
+      cpus: 1            # <=== Default to 1 if not defined
+  WorkerNode1:
+      ip: 192.168.1.61
+      role: worker
+      memory: 4096
+  WorkerNode2:
+      ip: 192.168.1.62
+      role: worker
+      memory: 4096
 ```
 
-Edit the "bride order" just below this so that vagrant knows which adapters to bridge networking to. Use the following section in the official Vagrant documentation to understand how this works: https://www.vagrantup.com/docs/networking/public_network#default-network-interface
+In the "Network Settings" section, edit the "net_bride order" just below this so that vagrant knows which adapters to bridge networking to. Use the following section in the official Vagrant documentation to understand how this works: https://www.vagrantup.com/docs/networking/public_network#default-network-interface
 
 Example:
 ```
-bridgeOrder = [
-  "en0: Wi-Fi (Wireless)",
-]
+net_bridge_order:
+  - "en0: Wi-Fi (Wireless)"
 ```
 
 # Building Cluster
