@@ -8,6 +8,7 @@
     - name: Install required packages
       apt: 
         package:
+        - aptitude
         - apt-transport-https
         - ca-certificates
         - curl
@@ -31,9 +32,6 @@
       become: true
 
     ### Docker Packages ###
-    - name: Install aptitude using apt
-      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
-
     - name: Add Docker GPG apt Key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -105,7 +103,7 @@
          enabled: true
       become: true
 
-    - name: net bridge sysctl settings for weavenet
+    - name: net bridge sysctl settings
       sysctl:
         name: net.bridge.bridge-nf-call-iptables
         value: '1'
@@ -126,6 +124,25 @@
         replace: '# \1'
       become: true
 
+    - name: Optional local persistent storage directory
+      file:
+        path: /var/lib/kube
+        state: directory
+        owner: root
+        group: root
+        mode: 0700
+      when: k8s_local_pv_dir | default(true)
+
+    - name: Optional local persistent storage directory
+      file:
+        path: /vault/file
+        state: directory
+        owner: root
+        group: root
+        mode: 0777
+      when: k8s_local_pv_dir | default(true)
+
+
 
 - hosts: masters
   become: true
@@ -137,7 +154,9 @@
 
     - name: Bring up master
       shell: |
-        kubeadm init --apiserver-advertise-address={{ ansible_default_ipv4.address }} \
+        kubeadm init --pod-network-cidr={{ kube_podnet_cidr | default("172.16.0.0/16") }} \
+                     --service-cidr={{ kube_service_cidr | default("10.96.0.0/12") }} \
+                     --apiserver-advertise-address={{ ansible_default_ipv4.address }} \
                      --control-plane-endpoint={{ ansible_default_ipv4.address }} \
                      --ignore-preflight-errors=NumCPU
       become: true
@@ -173,9 +192,59 @@
       become: true
       register: kubectl_version
 
-    - name: Configure WeaveNet
+    - name: Dump kubeconfig to config.json
+      shell: kubectl config view -o json --raw > ~/.kube/config.json
+      become_user: "{{ deploy_user }}"
+      become: true
+
+    - name: Configure WeaveNet (CNI)
       shell: |
-        KUBECONFIG=~/.kube/config kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+        kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+      when: kube_cni | default("calico") == "weave" 
+      become_user: "{{ deploy_user }}"
+
+    - name: Check to see if tigera-operator namespace exists
+      shell: |
+        kubectl get namespace tigera-operator || echo "Not found"
+      register: get_tigera_namespace
+      when: kube_cni | default("calico") == "calico" 
+      become_user: "{{ deploy_user }}"
+
+    - name: Configure Tigera Calico Operator (CNI)
+      shell: |
+        kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+      when: 
+        - kube_cni | default("calico") == "calico" 
+        - get_tigera_namespace.stdout == "Not found"
+      become_user: "{{ deploy_user }}"
+
+    - name: Configure Calico CRD (CNI)
+      k8s:
+        kubeconfig: /home/{{ deploy_user }}/.kube/config.json
+        definition:
+          apiVersion: operator.tigera.io/v1
+          kind: Installation
+          metadata:
+            name: default
+          spec:
+            calicoNetwork:
+              ipPools:
+              - blockSize: 26
+                cidr: "{{ kube_podnet_cidr | default('172.16.0.0/16') }}"
+                encapsulation: VXLANCrossSubnet
+                natOutgoing: Enabled
+                nodeSelector: all()
+        state: present
+      when: kube_cni | default("calico") == "calico" 
+      become_user: "{{ deploy_user }}"
+
+    - name: Wait for calico pods to come up
+      shell: kubectl get pods -n calico-system -o json
+      register: kubectl_get_pods
+      when: 
+        - kube_cni | default("calico") == "calico"
+      until: kubectl_get_pods.stdout|from_json|json_query('items[*].status.phase')|unique == ["Running"]
+      retries: 30
       become_user: "{{ deploy_user }}"
 
     - name: Untaint Master Node
