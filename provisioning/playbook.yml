@@ -183,7 +183,7 @@
     - name: Copy kubeconfig locally
       fetch:
         src: /etc/kubernetes/admin.conf 
-        dest: "./"
+        dest: "{{ playbook_dir }}/"
         flat: true 
       become: true
 
@@ -295,3 +295,13 @@
 #          --token {{ hostvars['K8S_JOIN_CMD_HOLDER']['token'] }} \
 #          --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_JOIN_CMD_HOLDER']['hash'] }}
 #      when: not ca_key.stat.exists
+
+- hosts: workers
+
+  tasks:
+    - name: Label worker nodes
+      shell: |
+        kubectl label node/{{ inventory_hostname }} node-role.kubernetes.io/role=true --overwrite=true
+      connection: local
+      environment:
+        KUBECONFIG: "{{ playbook_dir }}/admin.conf"
