@@ -17,11 +17,8 @@ ansibleMasterGroup = []
 
 Vagrant.configure(2) do |config|
   #Define the number of nodes to spin up
-  N = dictNodeInfo.keys.length()
-  counter = 0
 
-  dictNodeInfo.each_key do |hostname|
-    counter+=1
+  dictNodeInfo.each_with_index do |(hostname), index|
     nodeInfo = dictNodeInfo[hostname]
 
     config.vm.define hostname do |node|
@@ -47,7 +44,8 @@ Vagrant.configure(2) do |config|
       node.vm.provision :shell,
         :inline => "ip route delete default 2>&1 >/dev/null || true; ip route add default via #{defaultRouter}"
 
-      if counter == N
+      # Make sure to run ansible provisioner last
+      if index == dictNodeInfo.keys.length() - 1
         node.vm.provision "ansible" do |ansible|
           ansible.limit    = "all"
           ansible.verbose  = "vv"
@@ -56,18 +54,15 @@ Vagrant.configure(2) do |config|
           ansible.groups = {
             "all:vars" => {
               "deploy_user" => "vagrant",
-
               "kube_cni" => kube_cni,
               "kube_podnet_cidr" => kube_podnet_cidr,
               "kube_serice_cidr" => kube_service_cidr
-
             },
             "workers" => ansibleWorkerGroup,
             "masters" => ansibleMasterGroup
           }
         end
       end
-
     end
   end
 end
