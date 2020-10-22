@@ -9,6 +9,7 @@
       apt: 
         update_cache: yes
         package:
+        - jq
         - aptitude
         - apt-transport-https
         - ca-certificates
@@ -219,9 +220,49 @@
         - get_tigera_namespace.stdout == "Not found"
       become_user: "{{ deploy_user }}"
 
+    - name: Read kubeconfig JSON
+      shell: cat /home/{{ deploy_user }}/.kube/config.json | jq -r
+      register: kubeconfigjson
+
+    - set_fact:
+        kubeconfig: "{{ kubeconfigjson.stdout | from_json }}"
+
+    - set_fact:
+        kubeconfig_cluster: "{{ kubeconfig.clusters[0] }}"
+        kubeconfig_user: "{{ kubeconfig.users[0] }}"
+
+    - set_fact:
+        kubeconfig_host: "{{ kubeconfig_cluster.cluster.server }}"
+        kubeconfig_ca_cert: "{{ kubeconfig_cluster.cluster['certificate-authority-data'] }}"
+        kubeconfig_client_cert: "{{ kubeconfig_user.user['client-certificate-data'] }}"
+        kubeconfig_client_key: "{{ kubeconfig_user.user['client-key-data'] }}"
+
+    - name: Write CA data
+      copy:
+        dest: /home/{{ deploy_user }}/.kube/ca.crt
+        content: "{{ kubeconfig_cluster.cluster['certificate-authority-data'] | b64decode }}"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: 0600
+
+    - name: Write client cert
+      copy:
+        dest: /home/{{ deploy_user }}/.kube/client.crt
+        content: "{{ kubeconfig_user.user['client-certificate-data'] | b64decode }}"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: 0600
+
+    - name: Write client key
+      copy:
+        dest: /home/{{ deploy_user }}/.kube/client.key
+        content: "{{ kubeconfig_user.user['client-key-data'] | b64decode }}"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: 0600
+
     - name: Configure Calico CRD (CNI)
       k8s:
-        kubeconfig: /home/{{ deploy_user }}/.kube/config.json
         definition:
           apiVersion: operator.tigera.io/v1
           kind: Installation
@@ -236,6 +277,11 @@
                 natOutgoing: Enabled
                 nodeSelector: all()
         state: present
+        host: "{{ kubeconfig_host }}"
+        ca_cert: "/home/{{ deploy_user }}/.kube/ca.crt"
+        client_cert: "/home/{{ deploy_user }}/.kube/client.crt"
+        client_key: "/home/{{ deploy_user }}/.kube/client.key"
+        validate_certs: false
       when: kube_cni | default("calico") == "calico" 
       become_user: "{{ deploy_user }}"
 
