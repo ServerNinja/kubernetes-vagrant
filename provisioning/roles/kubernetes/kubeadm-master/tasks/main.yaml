@@ -1,0 +1,105 @@
+---
+- stat:
+    path: /etc/kubernetes/pki/ca.key
+  register: ca_key
+
+- name: Bring up master
+  shell: |
+    kubeadm init --pod-network-cidr={{ kube_podnet_cidr | default("172.16.0.0/16") }} \
+                 --service-cidr={{ kube_service_cidr | default("10.96.0.0/12") }} \
+                 --apiserver-advertise-address={{ ansible_default_ipv4.address }} \
+                 --control-plane-endpoint={{ ansible_default_ipv4.address }} \
+                 --ignore-preflight-errors=NumCPU
+  become: true
+  when: not ca_key.stat.exists
+  register: kubeadm_join
+
+- name: .kube dir
+  file: 
+    path: "/home/{{ deploy_user }}/.kube"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+  become: true
+
+- name: Copy kubeconfig
+  copy:
+    src: /etc/kubernetes/admin.conf 
+    dest: "/home/{{ deploy_user }}/.kube/config"
+    remote_src: true
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+  become: true
+
+- name: Copy kubeconfig locally
+  fetch:
+    src: /etc/kubernetes/admin.conf 
+    dest: "{{ playbook_dir }}/"
+    flat: true 
+  become: true
+
+- name: Get kubectl Version from CMD Line
+  shell: kubectl version | base64 | tr -d '\n'
+  become: true
+  register: kubectl_version
+
+- name: Dump kubeconfig to config.json
+  shell: kubectl config view -o json --raw > ~/.kube/config.json
+  become_user: "{{ deploy_user }}"
+  become: true
+
+- name: Read kubeconfig JSON
+  shell: cat /home/{{ deploy_user }}/.kube/config.json | jq -r
+  register: kubeconfigjson
+
+- set_fact:
+    kubeconfig: "{{ kubeconfigjson.stdout | from_json }}"
+
+- set_fact:
+    kubeconfig_cluster: "{{ kubeconfig.clusters[0] }}"
+    kubeconfig_user: "{{ kubeconfig.users[0] }}"
+
+- set_fact:
+    kubeconfig_host: "{{ kubeconfig_cluster.cluster.server }}"
+    kubeconfig_ca_cert: "{{ kubeconfig_cluster.cluster['certificate-authority-data'] }}"
+    kubeconfig_client_cert: "{{ kubeconfig_user.user['client-certificate-data'] }}"
+    kubeconfig_client_key: "{{ kubeconfig_user.user['client-key-data'] }}"
+
+- name: Write CA data
+  copy:
+    dest: /home/{{ deploy_user }}/.kube/ca.crt
+    content: "{{ kubeconfig_cluster.cluster['certificate-authority-data'] | b64decode }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0600
+
+- name: Write client cert
+  copy:
+    dest: /home/{{ deploy_user }}/.kube/client.crt
+    content: "{{ kubeconfig_user.user['client-certificate-data'] | b64decode }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0600
+
+- name: Write client key
+  copy:
+    dest: /home/{{ deploy_user }}/.kube/client.key
+    content: "{{ kubeconfig_user.user['client-key-data'] | b64decode }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0600
+
+- name: Untaint Master Node
+  shell: kubectl taint nodes --all node-role.kubernetes.io/master- || echo "Taint already removed"
+  become_user: "{{ deploy_user }}"
+
+- name: Generate Kubectl Join Command
+  shell: |
+    kubeadm token create --print-join-command
+  become_user: "{{ deploy_user }}"
+  register: kubeadm_join_cmd
+
+- name: "Add K8S generated join information to a dummy host"
+  add_host:
+    name:   "K8S_JOIN_CMD_HOLDER"
+    joincmd: "{{ kubeadm_join_cmd.stdout }}"

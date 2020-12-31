@@ -1,0 +1,45 @@
+---
+- name: Enable Kubernetes Service
+  systemd:
+     name: kubelet.service
+     enabled: true
+  become: true
+
+- name: net bridge sysctl settings
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
+  become: true
+
+- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+  shell: |
+    swapoff -a
+  become: true
+
+- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+  become: true
+
+- name: Optional local persistent storage directory
+  file:
+    path: /var/lib/kube
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  when: k8s_local_pv_dir | default(true)
+
+- name: Optional local persistent storage directory
+  file:
+    path: /vault/file
+    state: directory
+    owner: root
+    group: root
+    mode: 0777
+  when: k8s_local_pv_dir | default(true)

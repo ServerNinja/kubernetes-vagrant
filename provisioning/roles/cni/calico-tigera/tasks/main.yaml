@@ -1,0 +1,48 @@
+---
+- name: Check to see if tigera-operator namespace exists
+  shell: |
+    kubectl get namespace tigera-operator || echo "Not found"
+  register: get_tigera_namespace
+  when: kube_cni | default("calico") == "calico" 
+  become_user: "{{ deploy_user }}"
+
+- name: Configure Tigera Calico Operator (CNI)
+  shell: |
+    kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+  when: 
+    - kube_cni | default("calico") == "calico" 
+    - get_tigera_namespace.stdout == "Not found"
+  become_user: "{{ deploy_user }}"
+
+- name: Configure Calico CRD (CNI)
+  k8s:
+    definition:
+      apiVersion: operator.tigera.io/v1
+      kind: Installation
+      metadata:
+        name: default
+      spec:
+        calicoNetwork:
+          ipPools:
+          - blockSize: 26
+            cidr: "{{ kube_podnet_cidr | default('172.16.0.0/16') }}"
+            encapsulation: VXLANCrossSubnet
+            natOutgoing: Enabled
+            nodeSelector: all()
+    state: present
+    host: "{{ kubeconfig_host }}"
+    ca_cert: "/home/{{ deploy_user }}/.kube/ca.crt"
+    client_cert: "/home/{{ deploy_user }}/.kube/client.crt"
+    client_key: "/home/{{ deploy_user }}/.kube/client.key"
+    validate_certs: false
+  when: kube_cni | default("calico") == "calico" 
+  become_user: "{{ deploy_user }}"
+
+- name: Wait for calico pods to come up
+  shell: kubectl get pods -n calico-system -o json
+  register: kubectl_get_pods
+  when: 
+    - kube_cni | default("calico") == "calico"
+  until: kubectl_get_pods.stdout|from_json|json_query('items[*].status.phase')|unique == ["Running"]
+  retries: 30
+  become_user: "{{ deploy_user }}"

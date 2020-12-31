@@ -1,0 +1,28 @@
+---
+- name: Install required packages
+  apt: 
+    update_cache: yes
+    package:
+    - jq
+    - aptitude
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - wget
+    - software-properties-common
+    - gnupg2
+    - glusterfs-client
+    - iptables
+    - arptables
+    - ebtables
+    - python3-pip
+    state: present
+  become: true
+
+- name: Download K8s PIP packages
+  pip:
+    name:
+      - pyyaml
+      - kubernetes 
+      - openshift
+  become: true
