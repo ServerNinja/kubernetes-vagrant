@@ -9,6 +9,12 @@
     - include_role:
         name: "packages"
 
+
+- hosts:
+    - masters
+    - workers
+  become: true
+  tasks:
     ### Docker Packages ###
     - include_role:
         name: "container-engine/docker"
