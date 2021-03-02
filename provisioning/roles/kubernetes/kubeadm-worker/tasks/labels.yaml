@@ -1,7 +1,7 @@
 ---
 - name: Label worker nodes
   shell: |
-    kubectl label node/{{ inventory_hostname }} node-role.kubernetes.io/worker=true --overwrite=true
+    kubectl label node/{{ inventory_hostname|lower }} node-role.kubernetes.io/worker=true --overwrite=true
   connection: local
   environment:
     KUBECONFIG: "{{ playbook_dir }}/admin.conf"
