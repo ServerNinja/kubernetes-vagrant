@@ -55,3 +55,10 @@
     - include_role:
         name: "kubernetes/kubeadm-worker"
         tasks_from: labels.yaml
+
+- hosts: master
+
+  tasks:
+    - debug:
+        msg: "NOTE: To access environment with kubectl command, run: \"export KUBECONFIG=$(PWD)/provisioning/admin.conf\""
+      run_once: true
