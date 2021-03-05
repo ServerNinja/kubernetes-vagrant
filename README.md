@@ -75,6 +75,15 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 
 ## Monitoring Stack (prometheus, promtail, loki, grafana):
 
+**Set up persistent volumes**:
+```
+# Create the "local-storage" storageClass
+kubectl apply -f k8s/pv/storageClass.yml
+
+# Creates 15 PVs
+kubectl apply -f k8s/pv/pv.yml
+```
+
 **Prometheus / Grafana**:
 ```
 kubectl create namespace monitoring
