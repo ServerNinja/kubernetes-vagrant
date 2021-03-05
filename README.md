@@ -4,7 +4,9 @@
 - Virtualbox >= 6
 - Vagrant >= 2.2.8
 - Python 3
+- Ansible >= 2.9
 - Kubectl command (latest version)
+- helm v3
 
 # IP Addressing / Configuration:
 IMPORTANT: This work exposes your vagrant nodes to the bridged network of your computer. This means that they will run on the same IP subnet / range as your computer.
@@ -69,9 +71,55 @@ KubeDNS is running at https://192.168.1.60:6443/api/v1/namespaces/kube-system/se
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
-## Some post-install stuff you can do to kick off your cluster's usability
+# (Optional) Post-install stuff you can do to kick off your cluster's usability
 
-Installing cert-manager (lets-encrypt)
+## Monitoring Stack (prometheus, promtail, loki, grafana):
+
+**Prometheus / Grafana**:
+```
+kubectl create namespace monitoring
+
+helm repo add kube-prometheus-stack https://prometheus-community.github.io/helm-charts
+
+helm install kube-prometheus-stack kube-prometheus-stack/kube-prometheus-stack --namespace monitoring --values ./helm/prometheus/values.yaml
+```
+
+**Loki / Promtail**:
+```
+kubectl create namespace loki
+
+helm repo add grafana https://grafana.github.io/helm-charts
+
+helm install loki grafana/loki --namespace loki --values ./helm/loki/values.yaml
+
+helm install promtail grafana/promtail --namespace loki --values ./helm/promtail/values.yaml
+```
+
+**Accessing Grafana**:
+
+In order to get to grafana, you'll need to port-forward the grafana service to your computer and browse to it locally (http://localhost:8080)
+```
+# Port forward Grafana Console - http://localhost:8080/
+kubectl -n monitoring port-forward service/kube-prometheus-stack-grafana 8080:80
+```
+
+**Accessing Prometheus Web Console**:
+
+In order to get to prometheus, you'll need to port-forward the prometheus service to your computer and browse to it locally (http://localhost:9090)
+```
+# Port forward Prometheus Console - http://localhost:9090/
+kubectl -n monitoring port-forward service/kube-prometheus-stack-prometheus 9090:9090
+```
+
+**Accessing Alertmanager Web Console**:
+
+In order to get to alertmanager, you'll need to port-forward the alertmanager service to your computer and browse to it locally (http://localhost:9093)
+```
+# Port forward Alertmanager Console - http://localhost:9093/
+kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 9093:9093
+```
+
+**Installing cert-manager (lets-encrypt)**
 
 NOTE: The following yml files located in the `k8s` directory have been pulled from other sources and are not covered under the license of this work. They are just there for examples of "kick starter" components that can be added to the cluster once its up and running.
 
@@ -83,25 +131,10 @@ kubectl apply -f k8s/cert-manager/cert-manager.yml
 kubectl apply -f k8s/cert-manager/cert-manager-clusterissuer.yml
 ```
 
-Installing kubed
+**Installing kubed**
 ```
 # Kubed
 kubectl apply -f k8s/kubed/kubed-v0.12.0.yaml
-```
-
-Setting up helm
-```
-# Setup RBAC
-kubectl apply -f k8s/helm/rbac.yml
-
-# Install helm
-helm init
-
-# Fix issue with tiller using default service account instead of tiller
-kubectl --namespace kube-system patch deploy tiller-deploy -p "{\"spec\":{\"template\":{\"spec\":{\"serviceAccount\":\"tiller\"}}}}"
-
-# Wait for tiller to come up
-while [[ $(kubectl get pods -l name=tiller  -n kube-system -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
 ```
 
 # License
