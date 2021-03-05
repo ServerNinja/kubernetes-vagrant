@@ -147,6 +147,13 @@ helm install kubed appscode/kubed --namespace kube-system --values ./helm/kubed/
 
 [Cert-Manager Installation Instructions](https://cert-manager.io/docs/installation/kubernetes)
 
+# Future Improvements
+* Switch from Docker to Containerd
+* Support for CentOS as alternative to Ubuntu
+* Extend ansible code so it can deploy to RPis with Ubuntu
+* Option for dedicated etcd node(s)
+* Option for multi-master K8s nodes + LB (thinking Haproxy or Nginx)
+* Installation of helm charts (Automate Post-Install steps with flags in settings.yaml)
 
 # License
 Copyright 2021 Jennifer Reed
