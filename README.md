@@ -1,12 +1,15 @@
 # kubernetes-vagrant
 
-## Requirements (versions):
-- Virtualbox >= 6
-- Vagrant >= 2.2.8
-- Python 3
-- Ansible >= 2.9
-- Kubectl command (latest version)
-- helm v3
+## Pre-requisites:
+* Operating System: Mac OSX (although not tested, this may also work on Linux)
+* [Virtualbox](https://www.virtualbox.org/) >= 6
+* [Vagrant](https://www.vagrantup.com/) >= 2.2.8
+* Python 3
+* [Ansible](https://docs.ansible.com/) >= 2.9
+  * Installation:
+  ``` pip install -r requirements.txt ```
+* [Kubectl](https://kubernetes.io/docs/tasks/tools/) command (latest version)
+* [helm](https://helm.sh/) v3
 
 # IP Addressing / Configuration:
 IMPORTANT: This work exposes your vagrant nodes to the bridged network of your computer. This means that they will run on the same IP subnet / range as your computer.
@@ -34,7 +37,7 @@ node_info:
       memory: 4096
 ```
 
-In the "Network Settings" section, edit the "net_bride order" just below this so that vagrant knows which adapters to bridge networking to. Use the following section in the official Vagrant documentation to understand how this works: https://www.vagrantup.com/docs/networking/public_network#default-network-interface
+In the *"Network Settings"* section, edit the *"net_bride order"* just below this so that vagrant knows which adapters to bridge networking to. Use the following section in the official Vagrant documentation to understand how this works: https://www.vagrantup.com/docs/networking/public_network#default-network-interface
 
 Example:
 ```
@@ -71,20 +74,21 @@ KubeDNS is running at https://192.168.1.60:6443/api/v1/namespaces/kube-system/se
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
-# (Optional) Post-install stuff you can do to kick off your cluster's usability
+# [Optional] Post-install stuff you can do to kick off your cluster's usability
 
-## Monitoring Stack (prometheus, promtail, loki, grafana):
+**NOTE:** The helm values.yaml files and k8s manifests in this repo are tailored to install these components for this project and are not recommended for production configurations.
 
 **Set up persistent volumes**:
 ```
 # Create the "local-storage" storageClass
 kubectl apply -f k8s/pv/storageClass.yml
 
-# Creates 15 PVs
+# Creates 15 local storage PVs
 kubectl apply -f k8s/pv/pv.yml
 ```
 
-**Prometheus / Grafana**:
+**[Prometheus / Grafana](https://prometheus.io/):**
+
 ```
 kubectl create namespace monitoring
 
@@ -93,7 +97,31 @@ helm repo add kube-prometheus-stack https://prometheus-community.github.io/helm-
 helm install kube-prometheus-stack kube-prometheus-stack/kube-prometheus-stack --namespace monitoring --values ./helm/prometheus/values.yaml
 ```
 
-**Loki / Promtail**:
+* **Accessing Grafana**:
+
+In order to get to grafana, you'll need to port-forward the grafana service to your computer and browse to it locally (http://localhost:8080)
+```
+# Port forward Grafana Console - http://localhost:8080/
+kubectl -n monitoring port-forward service/kube-prometheus-stack-grafana 8080:80
+```
+
+* **Accessing Prometheus Web Console**:
+
+In order to get to prometheus, you'll need to port-forward the prometheus service to your computer and browse to it locally (http://localhost:9090)
+```
+# Port forward Prometheus Console - http://localhost:9090/
+kubectl -n monitoring port-forward service/kube-prometheus-stack-prometheus 9090:9090
+```
+
+* **Accessing Alertmanager Web Console**:
+
+In order to get to alertmanager, you'll need to port-forward the alertmanager service to your computer and browse to it locally (http://localhost:9093)
+```
+# Port forward Alertmanager Console - http://localhost:9093/
+kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 9093:9093
+```
+
+**Grafana [Loki / Promtail](https://grafana.com/oss/loki/)**:
 ```
 kubectl create namespace loki
 
@@ -104,50 +132,22 @@ helm install loki grafana/loki --namespace loki --values ./helm/loki/values.yaml
 helm install promtail grafana/promtail --namespace loki --values ./helm/promtail/values.yaml
 ```
 
-**Accessing Grafana**:
 
-In order to get to grafana, you'll need to port-forward the grafana service to your computer and browse to it locally (http://localhost:8080)
-```
-# Port forward Grafana Console - http://localhost:8080/
-kubectl -n monitoring port-forward service/kube-prometheus-stack-grafana 8080:80
-```
-
-**Accessing Prometheus Web Console**:
-
-In order to get to prometheus, you'll need to port-forward the prometheus service to your computer and browse to it locally (http://localhost:9090)
-```
-# Port forward Prometheus Console - http://localhost:9090/
-kubectl -n monitoring port-forward service/kube-prometheus-stack-prometheus 9090:9090
-```
-
-**Accessing Alertmanager Web Console**:
-
-In order to get to alertmanager, you'll need to port-forward the alertmanager service to your computer and browse to it locally (http://localhost:9093)
-```
-# Port forward Alertmanager Console - http://localhost:9093/
-kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 9093:9093
-```
-
-**Installing cert-manager (lets-encrypt)**
-
-NOTE: The following yml files located in the `k8s` directory have been pulled from other sources and are not covered under the license of this work. They are just there for examples of "kick starter" components that can be added to the cluster once its up and running.
+**Installing [kubed](https://appscode.com/products/kubed/)**
 
 ```
-# Cert-manager
-kubectl apply -f k8s/cert-manager/cert-manager.yml
+helm repo add appscode https://charts.appscode.com/stable/
 
-# You'll have to create this file - see https://docs.cert-manager.io/en/release-0.11/reference/clusterissuers.html for details
-kubectl apply -f k8s/cert-manager/cert-manager-clusterissuer.yml
+helm install kubed appscode/kubed --namespace kube-system --values ./helm/kubed/values.yaml
 ```
 
-**Installing kubed**
-```
-# Kubed
-kubectl apply -f k8s/kubed/kubed-v0.12.0.yaml
-```
+**Installing [cert-manager](https://cert-manager.io/docs/) (lets-encrypt)**
+
+[Cert-Manager Installation Instructions](https://cert-manager.io/docs/installation/kubernetes)
+
 
 # License
-Copyright 2020 Jennifer Reed
+Copyright 2021 Jennifer Reed
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this work except in compliance with the License.
