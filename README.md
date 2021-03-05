@@ -1,5 +1,9 @@
 # kubernetes-vagrant
 
+Multi-Node Kubernetes Cluster running in Vagrant
+
+[![asciicast](https://asciinema.org/a/UhPUqwsaCxrbXnZk19UxAAC3Z.svg)](https://asciinema.org/a/UhPUqwsaCxrbXnZk19UxAAC3Z)
+
 ## Pre-requisites:
 * Operating System: Mac OSX (although not tested, this may also work on Linux)
 * [Virtualbox](https://www.virtualbox.org/) >= 6

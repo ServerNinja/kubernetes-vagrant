@@ -56,7 +56,7 @@
         name: "kubernetes/kubeadm-worker"
         tasks_from: labels.yaml
 
-- hosts: master
+- hosts: masters
 
   tasks:
     - debug:
