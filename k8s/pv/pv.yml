@@ -6,6 +6,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -20,6 +21,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -34,6 +36,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -48,6 +51,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -62,6 +66,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -76,6 +81,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -90,6 +96,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -104,6 +111,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -118,6 +126,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -132,6 +141,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -146,6 +156,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -160,6 +171,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -174,6 +186,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -188,6 +201,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -202,6 +216,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
@@ -216,6 +231,7 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: "local-storage"
   capacity:
     storage: 10Gi
   accessModes:
