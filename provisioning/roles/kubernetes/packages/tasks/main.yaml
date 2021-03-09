@@ -3,12 +3,14 @@
   apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
+  retries: 10
   become: true
 
 - name: Add the k8s APT repo
   apt_repository:
     repo: 'deb http://apt.kubernetes.io/ kubernetes-xenial main'
     state: present
+  retries: 10
   become: true
 
 - name: Install K8s packages
@@ -20,4 +22,5 @@
     state: present
     update_cache: true
     force: yes
+  retries: 2
   become: true
