@@ -88,6 +88,26 @@
   when: kube_vagrant.helm.ingress_nginx | default(true)
   run_once: true
 
+- set_fact:
+    ingress_nginx_patch:
+      spec:
+        externalIPs: "{{ kube_vagrant.node_info | json_query(jquery) }}"
+  vars:
+    jquery: "*.ip"
+  when: kube_vagrant.helm.ingress_nginx | default(true)
+
+- name: Annotate ingress-nginx service
+  shell: |
+   kubectl patch svc ingress-nginx-controller -n ingress-nginx --patch '{{ ingress_nginx_patch | to_json }}'
+  become_user: "{{ deploy_user }}"
+  loop: '{{ storageClassManifests }}'
+  register: result
+  when: kube_vagrant.helm.ingress_nginx | default(true)
+  failed_when:
+    - result.rc != 0
+    - '"Error from server (AlreadyExists)" not in result.stderr'
+  run_once: true
+
 
 ### Prometheus Metrics
 - name: Add kube-prometheus helm repo
