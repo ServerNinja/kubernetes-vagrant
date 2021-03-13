@@ -41,6 +41,22 @@
     - '"Error from server (AlreadyExists)" not in result.stderr'
   run_once: true
 
+### Kubernetes Dashboard
+- name: Add kubernetes-dashboard helm repo
+  community.kubernetes.helm_repository:
+    name: kubernetes-dashboard
+    repo_url: "https://kubernetes.github.io/dashboard/"
+  when: kube_vagrant.helm.kubernetes_dashboard | default(true)
+
+- name: Install kubernetes-dashboard helm chart
+  community.kubernetes.helm:
+    name: kubernetes-dashboard
+    chart_ref: kubernetes-dashboard/kubernetes-dashboard
+    release_namespace: kubernetes-dashboard
+    create_namespace: true
+  when: kube_vagrant.helm.kubernetes_dashboard | default(true)
+  run_once: true
+
 ### Kubed
 - name: Add stable helm repo
   community.kubernetes.helm_repository:
@@ -53,7 +69,7 @@
     chart_ref: appscode/kubed
     release_namespace: kube-system
     create_namespace: true
-  when: helm_charts.kubed | default(true)
+  when: kube_vagrant.helm.kubed | default(true)
   run_once: true
 
 ### Prometheus Metrics
@@ -65,7 +81,7 @@
 
 - name: Deploy Kube-Prometheus-Stack chart inside monitoring namespace
   community.kubernetes.helm:
-    name: monitoring
+    name: kube-prometheus-stack
     chart_ref: kube-prometheus-stack/kube-prometheus-stack
     release_namespace: monitoring
     create_namespace: true
