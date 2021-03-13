@@ -2,6 +2,12 @@
 require 'yaml'
 settings = YAML.load_file("settings.yml")
 
+system("
+    if [ '#{ARGV[0]}' = 'up' ] || [ '#{ARGV[0]}' = 'provision' ]; then
+      ansible-galaxy collection install community.kubernetes -p provisioning/ansible_collections/
+    fi
+")
+
 dictNodeInfo = settings['node_info']
 defaultRouter = settings['default_router']
 bridgeOrder = settings['net_bridge_order']
@@ -50,13 +56,13 @@ Vagrant.configure(2) do |config|
           ansible.limit    = "all"
           ansible.verbose  = "vv"
           ansible.playbook = "provisioning/playbook.yml"
+          ansible.galaxy_role_file = "provisioning/requirements.yaml"
+          ansible.config_file = "provisioning/ansible.cfg"
 
           ansible.groups = {
             "all:vars" => {
               "deploy_user" => "vagrant",
-              "kube_cni" => kube_cni,
-              "kube_podnet_cidr" => kube_podnet_cidr,
-              "kube_serice_cidr" => kube_service_cidr
+              "kube_vagrant" => settings.to_json
             },
             "workers" => ansibleWorkerGroup,
             "masters" => ansibleMasterGroup

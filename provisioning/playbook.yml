@@ -6,6 +6,10 @@
         var: ansible_default_ipv4.address
 
     ### Required Packages ###
+    ### Import from settings.yml
+    - set_fact:
+        kube_vagrant: '{{ kube_vagrant | from_yaml }}'
+
     - include_role:
         name: "packages"
 
@@ -59,6 +63,9 @@
 - hosts: masters
 
   tasks:
+    - include_role:
+        name: "helm-packages"
+
     - debug:
         msg: "NOTE: To access environment with kubectl command, run: \"export KUBECONFIG=$(PWD)/provisioning/admin.conf\""
       run_once: true

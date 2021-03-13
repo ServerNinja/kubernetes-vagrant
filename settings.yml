@@ -41,3 +41,11 @@ kubernetes:
   # SDN settings
   #kube_podnet_cidr: 172.16.0.0/16
   #kube_service_cidr: 10.96.0.0/12
+######## End Kubernetes Settings #######
+
+######## Optional Helm Charts to be installed by ansible #######
+helm:
+  kubed: false
+  prometheus: false
+  loki: false
+  promtail: false

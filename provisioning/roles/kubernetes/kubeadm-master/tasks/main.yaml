@@ -5,8 +5,8 @@
 
 - name: Bring up master
   shell: |
-    kubeadm init --pod-network-cidr={{ kube_podnet_cidr | default("172.16.0.0/16") }} \
-                 --service-cidr={{ kube_service_cidr | default("10.96.0.0/12") }} \
+    kubeadm init --pod-network-cidr={{ kube_vagrant.kubernetes.kube_podnet_cidr | default("172.16.0.0/16") }} \
+                 --service-cidr={{ kube_vagrant.kubernetes.kube_service_cidr | default("10.96.0.0/12") }} \
                  --apiserver-advertise-address={{ ansible_default_ipv4.address }} \
                  --control-plane-endpoint={{ ansible_default_ipv4.address }} \
                  --ignore-preflight-errors=NumCPU
@@ -29,6 +29,7 @@
     remote_src: true
     owner: "{{ deploy_user }}"
     group: "{{ deploy_user }}"
+    mode: 0600
   become: true
 
 - name: Copy kubeconfig locally

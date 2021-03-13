@@ -1,0 +1,253 @@
+prometheusHelmValues: 
+  # Reference values.yaml file for chart parameters:
+  # https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+  
+  namespaceOverride: "monitoring"
+  
+  commonLabels: {}
+  
+  ## Manages Prometheus and Alertmanager components
+  ##
+  
+  ##### Alertmanager #####
+  alertmanager:
+    enabled: true
+    serviceAccount:
+      create: true
+      name: "alertmanager"
+  
+    ## Alertmanager configuration directives
+    ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
+    ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
+    ### Null Receiver (receivers) - alerts go nowhere ###
+    config:
+      global:
+        resolve_timeout: 10m
+      receivers:
+        - name: "null"
+      route:
+        group_by:
+          - alertname
+          - cluster
+        group_interval: 1m
+        group_wait: 10s
+        repeat_interval: 90s
+        receiver: "null"
+        routes:
+          - match:
+              alertname: Watchdog
+            receiver: "null"
+  
+    ingress:
+      enabled: false
+      annotations:
+        kubernetes.io/ingress.class: "nginx"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        #nginx.ingress.kubernetes.io/auth-signin: https://$host/oauth2/start?rd=https://$host$request_uri$is_args$args
+        #nginx.ingress.kubernetes.io/auth-url: https://$host/oauth2/auth
+        kubernetes.io/tls-acme: "true"
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        acme.cert-manager.io/http01-ingress-class: nginx
+      labels: { }
+      hosts:
+        - alertmanager.example.whatever
+      paths:
+        - /
+      tls:
+        - hosts:
+            - alertmanager.example.whatever
+          secretName: alertmanager.example.whatever
+  
+    alertmanagerSpec:
+      replicas: 1
+      nodeSelector: { }
+      podAntiAffinity: ''
+      #podAntiAffinityTopologyKey: topology.kubernetes.io/zone # This rule ensures that the application vault pods cannot run in the same zone.
+      affinity: {}
+      tolerations: []
+  
+  ##### Grafana #####
+  grafana:
+    enabled: true
+    namespaceOverride: ""
+  
+    serviceAccount:
+      create: true
+      name: "grafana"
+  
+    defaultDashboardsEnabled: true
+  
+    podAnnotations: {}
+  
+    ingress:
+      enabled: false
+      annotations:
+        kubernetes.io/ingress.class: "nginx"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        kubernetes.io/tls-acme: "true"
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        acme.cert-manager.io/http01-ingress-class: nginx
+      labels: { }
+      hosts:
+        - grafana.example.whatever
+      paths:
+        - /
+      tls:
+        - hosts:
+            - grafana.example.whatever
+          secretName: grafana.example.whatever
+  
+    grafana.ini:
+      plugins:
+        - grafana-piechart-panel
+      paths:
+        data: /var/lib/grafana/data
+        logs: /var/log/grafana
+        plugins: /var/lib/grafana/plugins
+        provisioning: /etc/grafana/provisioning
+      metrics:
+        enabled: true
+      analytics:
+        check_for_updates: true
+      log:
+        mode: console
+      auth:
+        disable_login_form: true
+      auth.basic:
+        enabled: false
+      auth.anonymous:
+        enabled: true
+        org_name: Main Org.
+        org_role: Admin
+      grafana_net:
+        url: https://grafana.net
+      users:
+        # Can be "Viewer", "Editor", or "Admin"
+        auto_assign_org_role: "Admin"
+      #security:
+      #  admin_user: user.name@example.whatever
+      #server:
+      #  root_url: https://grafana.example.whatever
+      #  domain: grafana.example.whatever
+      #auth.generic_oauth:
+      #  enabled: true
+      #  client_id: 'xxxxxxxxxxxxxxxxxxxxx'
+      #  client_secret: 'xxxxxxxxxxxxxxxxxxxxxxxxx' 
+      #  scopes: "openid profile email offline_access"
+      #  auth_url: https://dex.example.whatever/auth
+      #  token_url: https://dex.example.whatever/token
+      #  allow_sign_up: true
+      #  allowed_domains: example.whatever
+  
+    env: {}
+  
+    additionalDataSources:
+        - name: Loki
+          type: loki
+          access: proxy
+          orgId: 1
+          url: http://loki.loki.svc:3100
+          version: 1
+          editable: true
+          
+  
+  ##### Prometheus Operator#####
+  prometheusOperator:
+    enabled: true
+  
+    serviceAccount:
+      create: true
+      name: "prometheus-operator"
+  
+    createCustomResource: true
+    cleanupCustomResource: false
+    # If using arm64
+    #prometheusConfigReloaderImage:
+    #  repository: quay.io/prometheus-operator/prometheus-config-reloader
+    #  tag: v0.45.0-arm64
+    
+  ##### Prometheus #####
+  prometheus:
+    enabled: true
+  
+    serviceAccount:
+      create: true
+      name: "prometheus"
+  
+    ingress:
+      enabled: false
+      annotations:
+        kubernetes.io/ingress.class: "nginx"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        #nginx.ingress.kubernetes.io/auth-signin: https://$host/oauth2/start?rd=https://$host$request_uri$is_args$args
+        #nginx.ingress.kubernetes.io/auth-url: https://$host/oauth2/auth
+        kubernetes.io/tls-acme: "true"
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        acme.cert-manager.io/http01-ingress-class: nginx
+      labels: { }
+      hosts:
+        - prometheus.example.whatever
+      paths:
+        - /
+      tls:
+        - hosts:
+            - prometheus.example.whatever
+          secretName: prometheus.example.whatever
+  
+    thanosIngress:
+      enabled: false
+      servicePort: 10901
+      annotations:
+        kubernetes.io/ingress.class: "nginx"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        kubernetes.io/tls-acme: "true"
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        acme.cert-manager.io/http01-ingress-class: nginx
+      labels: { }
+      hosts:
+        - thanos-sidecar-gateway.example.whatever
+      paths:
+        - /
+      tls:
+        - hosts:
+            - thanos-sidecar-gateway.example.whatever
+          secretName: thanos-sidecar-gateway.example.whatever
+  
+    prometheusSpec:
+      ruleSelectorNilUsesHelmValues: false
+      ruleNamespaceSelector: {}
+      ruleSelector: {}
+  
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorNamespaceSelector: {}
+      serviceMonitorSelector: {}
+  
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorNamespaceSelector: {}
+      podMonitorSelector: {}
+  
+      probeSelectorNilUsesHelmValues: false
+      probeNamespaceSelector: {}
+      probeSelector: {}
+  
+      replicas: 1
+      tolerations: []
+      nodeSelector: { }
+      podAntiAffinity: ''
+      #podAntiAffinityTopologyKey: topology.kubernetes.io/zone
+      affinity: {}
+  
+      ######## If using Thanos ###########
+      #enableAdminAPI: true
+      #disableCompaction: true
+  
+      #podMetadata:
+      #  annotations:
+      #    iam.amazonaws.com/role: ${thanos_iam_role}
+  
+      #thanos:
+      #  version: v0.16.0
+      #  objectStorageConfig:
+      #    key: object-store.yaml 
+      #    name: thanos-${cluster_id}-config
+      ######## End Thanos ###############

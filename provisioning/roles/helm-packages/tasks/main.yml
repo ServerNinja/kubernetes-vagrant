@@ -1,0 +1,127 @@
+---
+- name: Add helm apt key
+  apt_key:
+    url: "https://baltocdn.com/helm/signing.asc"
+    state: present
+  become: true
+
+- name: Add helm apt repo
+  apt_repository:
+    repo: deb https://baltocdn.com/helm/stable/debian/ all main 
+    state: present
+  become: true
+
+- name: Install helm
+  apt: 
+    update_cache: yes
+    package:
+      - helm
+  become: true
+
+- name: Configure Local Storage Class
+  shell: |
+    echo "{{ item | to_yaml }}" | kubectl create -f -
+  become_user: "{{ deploy_user }}"
+  loop: '{{ storageClassManifests }}'
+  register: result
+  failed_when:
+    - result.rc != 0
+    - '"Error from server (AlreadyExists)" not in result.stderr'
+  run_once: true
+
+
+- name: Configure Local Persistent Volumes
+  shell: |
+    echo "{{ item | to_yaml }}" | kubectl create -f -
+  become_user: "{{ deploy_user }}"
+  loop: '{{ pvManifests }}'
+  register: result
+  failed_when:
+    - result.rc != 0
+    - '"Error from server (AlreadyExists)" not in result.stderr'
+  run_once: true
+
+### Kubed
+- name: Add stable helm repo
+  community.kubernetes.helm_repository:
+    name: appscode
+    repo_url: "https://charts.appscode.com/stable/"
+
+- name: Install kubed helm chart
+  community.kubernetes.helm:
+    name: kubed
+    chart_ref: appscode/kubed
+    release_namespace: kube-system
+    create_namespace: true
+  when: helm_charts.kubed | default(true)
+  run_once: true
+
+### Prometheus Metrics
+- name: Add kube-prometheus helm repo
+  community.kubernetes.helm_repository:
+    name: kube-prometheus-stack
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+  when: kube_vagrant.helm.prometheus | default(true)
+
+- name: Deploy Kube-Prometheus-Stack chart inside monitoring namespace
+  community.kubernetes.helm:
+    name: monitoring
+    chart_ref: kube-prometheus-stack/kube-prometheus-stack
+    release_namespace: monitoring
+    create_namespace: true
+    values: "{{ prometheusHelmValues }}"
+  when: kube_vagrant.helm.prometheus | default(true)
+  run_once: true
+
+### Loki / Logging / Promtail
+- name: Add grafana helm repo
+  community.kubernetes.helm_repository:
+    name: grafana
+    repo_url: "https://grafana.github.io/helm-charts"
+
+- name: Create helm staging directory
+  file:
+    path: "/home/{{ deploy_user }}/helm"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+  become_user: "{{ deploy_user }}"
+  become: true
+ 
+- name: Copy helm manifests
+  copy:
+    src: "helm-values-{{ item }}.yaml"
+    dest: "/home/{{ deploy_user }}/helm/helm-values-{{ item }}.yaml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+  become_user: "{{ deploy_user }}"
+  become: true
+  loop:
+    - loki
+    - promtail
+
+- name: Deploy Loki chart inside loki namespace
+  community.kubernetes.helm:
+    name: loki
+    chart_ref: grafana/loki
+    release_namespace: loki
+    create_namespace: true
+    values_files:
+      - /home/{{ deploy_user }}/helm/helm-values-loki.yaml
+  become_user: "{{ deploy_user }}"
+  become: true
+  when: kube_vagrant.helm.loki | default(true)
+  run_once: true
+
+- name: Deploy Promtail chart inside loki namespace
+  community.kubernetes.helm:
+    name: promtail
+    chart_ref: grafana/promtail
+    release_namespace: loki
+    create_namespace: true
+    values_files:
+      - /home/{{ deploy_user }}/helm/helm-values-promtail.yaml
+  become_user: "{{ deploy_user }}"
+  become: true
+  when: kube_vagrant.helm.promtail | default(true)
+  run_once: true

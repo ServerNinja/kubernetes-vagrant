@@ -1,0 +1,7 @@
+---
+# Installs the community.kubernetes community collections:
+#    https://github.com/ansible-collections/community.kubernetes
+
+collections:
+  - name: community.kubernetes
+    version: 1.2.0

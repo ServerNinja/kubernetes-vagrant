@@ -47,6 +47,19 @@ net_bridge_order:
   - "en0: Wi-Fi (Wireless)"
 ```
 
+### Adjusting optional helm charts
+
+Out of the box, kubernetes-vagrant will install some helm charts. You may flag these to install with `true` / `false` in the settings.yaml under the `helm` section:
+
+```
+######## Optional Helm Charts to be installed by ansible #######
+helm:
+  kubed: false
+  prometheus: false
+  loki: false
+  promtail: false
+```
+
 # Building Cluster
 Run the following command to create the cluster:
 ```
@@ -76,28 +89,7 @@ KubeDNS is running at https://192.168.1.60:6443/api/v1/namespaces/kube-system/se
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
-# [Optional] Post-install stuff you can do to kick off your cluster's usability
-
-**NOTE:** The helm values.yaml files and k8s manifests in this repo are tailored to install these components for this project and are not recommended for production configurations.
-
-**Set up persistent volumes**:
-```
-# Create the "local-storage" storageClass
-kubectl apply -f k8s/pv/storageClass.yml
-
-# Creates 15 local storage PVs
-kubectl apply -f k8s/pv/pv.yml
-```
-
-**[Prometheus / Grafana](https://prometheus.io/):**
-
-```
-kubectl create namespace monitoring
-
-helm repo add kube-prometheus-stack https://prometheus-community.github.io/helm-charts
-
-helm install kube-prometheus-stack kube-prometheus-stack/kube-prometheus-stack --namespace monitoring --values ./helm/prometheus/values.yaml
-```
+# Accessing management features
 
 * **Accessing Grafana**:
 
@@ -123,37 +115,13 @@ In order to get to alertmanager, you'll need to port-forward the alertmanager se
 kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 9093:9093
 ```
 
-**Grafana [Loki / Promtail](https://grafana.com/oss/loki/)**:
-```
-kubectl create namespace loki
-
-helm repo add grafana https://grafana.github.io/helm-charts
-
-helm install loki grafana/loki --namespace loki --values ./helm/loki/values.yaml
-
-helm install promtail grafana/promtail --namespace loki --values ./helm/promtail/values.yaml
-```
-
-
-**Installing [kubed](https://appscode.com/products/kubed/)**
-
-```
-helm repo add appscode https://charts.appscode.com/stable/
-
-helm install kubed appscode/kubed --namespace kube-system --values ./helm/kubed/values.yaml
-```
-
-**Installing [cert-manager](https://cert-manager.io/docs/) (lets-encrypt)**
-
-[Cert-Manager Installation Instructions](https://cert-manager.io/docs/installation/kubernetes)
-
 # Future Improvements
 * Switch from Docker to Containerd
 * Support for CentOS as alternative to Ubuntu
 * Extend ansible code so it can deploy to RPis with Ubuntu
 * Option for dedicated etcd node(s)
 * Option for multi-master K8s nodes + LB (thinking Haproxy or Nginx)
-* Installation of helm charts (Automate Post-Install steps with flags in settings.yaml)
+
 
 # License
 Copyright 2021 Jennifer Reed

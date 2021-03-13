@@ -3,14 +3,14 @@
   shell: |
     kubectl get namespace tigera-operator || echo "Not found"
   register: get_tigera_namespace
-  when: kube_cni | default("calico") == "calico" 
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "calico" 
   become_user: "{{ deploy_user }}"
 
 - name: Configure Tigera Calico Operator (CNI)
   shell: |
     kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
   when: 
-    - kube_cni | default("calico") == "calico" 
+    - kube_vagrant.kubernetes.kube_cni | default("calico") == "calico" 
     - get_tigera_namespace.stdout == "Not found"
   become_user: "{{ deploy_user }}"
 
@@ -25,7 +25,7 @@
         calicoNetwork:
           ipPools:
           - blockSize: 26
-            cidr: "{{ kube_podnet_cidr | default('172.16.0.0/16') }}"
+            cidr: "{{ kube_vagrant.kubernetes.kube_podnet_cidr | default('172.16.0.0/16') }}"
             encapsulation: VXLANCrossSubnet
             natOutgoing: Enabled
             nodeSelector: all()
@@ -35,14 +35,14 @@
     client_cert: "/home/{{ deploy_user }}/.kube/client.crt"
     client_key: "/home/{{ deploy_user }}/.kube/client.key"
     validate_certs: false
-  when: kube_cni | default("calico") == "calico" 
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "calico" 
   become_user: "{{ deploy_user }}"
 
 - name: Wait for calico pods to come up
   shell: kubectl get pods -n calico-system -o json
   register: kubectl_get_pods
   when: 
-    - kube_cni | default("calico") == "calico"
+    - kube_vagrant.kubernetes.kube_cni | default("calico") == "calico"
   until: kubectl_get_pods.stdout|from_json|json_query('items[*].status.phase')|unique == ["Running"]
   retries: 30
   become_user: "{{ deploy_user }}"
