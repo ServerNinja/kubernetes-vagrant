@@ -7,7 +7,7 @@ Multi-Node Kubernetes Cluster running in Vagrant
 * [Virtualbox](https://www.virtualbox.org/) >= 6
 * [Vagrant](https://www.vagrantup.com/) >= 2.2.8
 * Python 3
-* [Ansible](https://docs.ansible.com/) >= 2.9
+* [Ansible](https://docs.ansible.com/) >= 2.10.5
   * Installation:
   ``` pip install -r requirements.txt ```
 * [Kubectl](https://kubernetes.io/docs/tasks/tools/) command (latest version)
