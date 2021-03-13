@@ -72,6 +72,11 @@ Run the following command to destroy the cluster:
 vagrant destroy -f
 ```
 
+Re-running ansible provisioner at any time:
+```
+vagrant provision
+```
+
 ## Running kubectl commands
 
 ```
@@ -90,6 +95,16 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
 # Accessing management features
+
+* **Kubernetes Dashboard**:
+To access, run:
+```
+kubectl proxy
+```
+
+Then browse to: http://localhost:8001/ui
+
+More info: [Click here](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard#using-the-dashboard-with-kubectl-proxy)
 
 * **Accessing Grafana**:
 
