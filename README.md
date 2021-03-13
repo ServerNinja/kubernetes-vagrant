@@ -96,16 +96,6 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 
 # Accessing management features
 
-* **Kubernetes Dashboard**:
-To access, run:
-```
-kubectl proxy
-```
-
-Then browse to: http://localhost:8001/ui
-
-More info: [Click here](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard#using-the-dashboard-with-kubectl-proxy)
-
 * **Accessing Grafana**:
 
 In order to get to grafana, you'll need to port-forward the grafana service to your computer and browse to it locally (http://localhost:8080)
