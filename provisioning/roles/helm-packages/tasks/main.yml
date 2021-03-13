@@ -96,7 +96,7 @@
     jquery: "*.ip"
   when: kube_vagrant.helm.ingress_nginx | default(true)
 
-- name: Annotate ingress-nginx service
+- name: Patch ingress-nginx service
   shell: |
    kubectl patch svc ingress-nginx-controller -n ingress-nginx --patch '{{ ingress_nginx_patch | to_json }}'
   become_user: "{{ deploy_user }}"
