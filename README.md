@@ -114,6 +114,12 @@ In order to get to grafana, you'll need to port-forward the grafana service to y
 kubectl -n monitoring port-forward service/kube-prometheus-stack-grafana 8080:80
 ```
 
+NOTE: Viewing logs with loki in grafana:
+
+> To see the logs, click Explore on the sidebar, select the Loki datasource in the top-left dropdown, and then choose a log stream using the Log labels button.
+
+Ref to Loki Docs: [Click Here](https://grafana.com/docs/loki/latest/getting-started/grafana/#loki-in-grafana)
+
 * **Accessing Prometheus Web Console**:
 
 In order to get to prometheus, you'll need to port-forward the prometheus service to your computer and browse to it locally (http://localhost:9090)
