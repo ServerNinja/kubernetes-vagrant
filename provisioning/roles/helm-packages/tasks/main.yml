@@ -72,6 +72,23 @@
   when: kube_vagrant.helm.kubed | default(true)
   run_once: true
 
+### Kubed
+- name: Add ingress-nginx helm repo
+  community.kubernetes.helm_repository:
+    name: ingress-nginx
+    repo_url: "https://kubernetes.github.io/ingress-nginx"
+  when: kube_vagrant.helm.ingress_nginx | default(true)
+
+- name: Install ingress-nginx helm chart
+  community.kubernetes.helm:
+    name: ingress-nginx 
+    chart_ref: ingress-nginx/ingress-nginx
+    release_namespace: ingress-nginx
+    create_namespace: true
+  when: kube_vagrant.helm.ingress_nginx | default(true)
+  run_once: true
+
+
 ### Prometheus Metrics
 - name: Add kube-prometheus helm repo
   community.kubernetes.helm_repository:

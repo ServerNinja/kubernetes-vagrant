@@ -50,5 +50,8 @@ helm:
   loki: true
   promtail: true
 
+  # Ingress Controller
+  ingress_nginx: true
+
   # Not working yet
   kubernetes_dashboard: false
