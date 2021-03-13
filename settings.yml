@@ -45,7 +45,7 @@ kubernetes:
 
 ######## Optional Helm Charts to be installed by ansible #######
 helm:
-  kubed: false
-  prometheus: false
-  loki: false
-  promtail: false
+  kubed: true
+  prometheus: true
+  loki: true
+  promtail: true
