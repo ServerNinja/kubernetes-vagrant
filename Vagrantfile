@@ -20,6 +20,7 @@ kube_service_cidr = kubeSettings['kube_service_cidr'] || "10.96.0.0/12"
 
 ansibleWorkerGroup = []
 ansibleMasterGroup = []
+ansibleEtcdGroup = []
 
 Vagrant.configure(2) do |config|
   #Define the number of nodes to spin up
@@ -32,6 +33,8 @@ Vagrant.configure(2) do |config|
         ansibleWorkerGroup.append(hostname)
       elsif nodeInfo['role'] == "master"
         ansibleMasterGroup.append(hostname)
+      elsif nodeInfo['role'] == "etcd"
+        ansibleEtcdGroup.append(hostname)
       end
      
       node.vm.box = "bento/ubuntu-20.04"
@@ -65,7 +68,8 @@ Vagrant.configure(2) do |config|
               "kube_vagrant" => settings.to_json
             },
             "workers" => ansibleWorkerGroup,
-            "masters" => ansibleMasterGroup
+            "masters" => ansibleMasterGroup,
+            "etcd" => ansibleEtcdGroup
           }
         end
       end

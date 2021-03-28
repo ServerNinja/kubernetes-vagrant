@@ -1,0 +1,128 @@
+## Going with this guide for setting up HA etcd clusters:
+##    https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/setup-ha-etcd-with-kubeadm/
+---
+- name: Create systemd config for etcd
+  copy:
+    content: |
+      [Service]
+      ExecStart=
+      #  Replace "systemd" with the cgroup driver of your container runtime. The default value in the kubelet is "cgroupfs".
+      ExecStart=/usr/bin/kubelet --address=127.0.0.1 --pod-manifest-path=/etc/kubernetes/manifests --cgroup-driver=systemd
+      Restart=always
+    dest: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
+  register: kubelet_config
+  become: true
+
+- name: Restart kubelet Service
+  systemd:
+    name: kubelet.service
+    enabled: true
+    state: restarted
+  when: kubelet_config.changed
+
+- name: Start Kubelet Service
+  systemd:
+    name: kubelet.service
+    enabled: true
+    state: started
+  when: not kubelet_config.changed
+
+- set_fact:
+    etcdKubeConfig: |
+      apiVersion: "kubeadm.k8s.io/v1beta2"
+      kind: ClusterConfiguration
+      etcd:
+        local:
+          serverCertSANs:
+          - "{{ inventory_hostname }}"
+          - "{{ hostvars[inventory_hostname]['kube_vagrant']['node_info'][inventory_hostname]['ip'] }}"
+          peerCertSANs:
+          - "{{ inventory_hostname }}"
+          - "{{ hostvars[inventory_hostname]['kube_vagrant']['node_info'][inventory_hostname]['ip'] }}"
+          extraArgs:
+            initial-cluster: "{% set comma = joiner(",") %}{% for host in groups['etcd'] %}{{ comma() }}{{ hostvars[host]['inventory_hostname'] }}=https://{{ kube_vagrant.node_info[host].ip }}:2380{% endfor %}"
+            initial-cluster-state: new
+            name: "{{ inventory_hostname }}"
+            listen-peer-urls: "https://{{ inventory_hostname }}:2380"
+            listen-client-urls: "https://{{ inventory_hostname }}:2379"
+            advertise-client-urls: "https://{{ inventory_hostname }}:2379"
+            initial-advertise-peer-urls: "https://{{ inventory_hostname }}:2380"
+
+- name: CA Temp Folder
+  file:
+    state: directory
+    path: "/tmp/{{ hostvars[item]['inventory_hostname'] }}"
+  loop: "{{ groups['etcd'] }}"
+  when: inventory_hostname == groups['etcd'][0]
+
+- name: kubeadmcfg.yaml
+  copy:
+    dest: "/tmp/{{ hostvars[item]['inventory_hostname'] }}/kubeadmcfg.yaml"
+    content: "{{ hostvars[item]['etcdKubeConfig'] }}"
+  loop: "{{ groups['etcd'] }}"
+  when: inventory_hostname == groups['etcd'][0]
+
+- stat:
+    path: /etc/kubernetes/pki
+  register: kube_pki_path
+  when: inventory_hostname == groups['etcd'][0]
+
+- name: Initiate PKI
+  shell: |
+    kubeadm init phase certs etcd-ca
+  when: (not kube_pki_path.stat.exists | default(false)) and inventory_hostname == groups['etcd'][0]
+
+- stat:
+    path: "/tmp/{{ inventory_hostname }}/etcd-pki-{{ inventory_hostname }}.tgz"
+  register: kube_ca_file
+  when: inventory_hostname == groups['etcd'][0]
+
+- name: Generate PKI with etcd certs using kubeadm
+  shell: |
+    find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete
+    kubeadm init phase certs etcd-server --config=./kubeadmcfg.yaml
+    kubeadm init phase certs etcd-peer --config=./kubeadmcfg.yaml
+    kubeadm init phase certs etcd-healthcheck-client --config=./kubeadmcfg.yaml
+    kubeadm init phase certs apiserver-etcd-client --config=./kubeadmcfg.yaml
+    cp -R /etc/kubernetes/pki .
+    cd ./pki
+    tar -czf "../etcd-pki-{{ hostvars[item]['inventory_hostname'] }}.tgz" .
+  args:
+    chdir: "/tmp/{{ hostvars[item]['inventory_hostname'] }}"
+  loop: "{{ groups['etcd'] }}"
+  when: (not kube_ca_file.stat.exists | default(false)) and inventory_hostname == groups['etcd'][0]
+
+- name: Fetch PKI tgz files
+  fetch:
+    src: "/tmp/{{ hostvars[item]['inventory_hostname'] }}/etcd-pki-{{ hostvars[item]['inventory_hostname'] }}.tgz"
+    dest: "./tmp/etcd-pki-{{ hostvars[item]['inventory_hostname'] }}.tgz"
+    flat: true
+  loop: "{{ groups['etcd'] }}"
+  when: inventory_hostname == groups['etcd'][0]
+
+- name: Generate PKI with etcd certs using kubeadm
+  shell: |
+    tar -czf "/tmp/apiserver-etcd-client-certs.tgz" etcd/ca.crt apiserver-etcd-client.crt apiserver-etcd-client.key
+  args:
+    chdir: "/etc/kubernetes/pki"
+  when: inventory_hostname == groups['etcd'][0]
+
+- name: Fetch kubeadm apiserver-etcd-client files
+  fetch:
+    src: "/tmp/apiserver-etcd-client-certs.tgz"
+    dest: "./tmp/apiserver-etcd-client-certs.tgz"
+    flat: true
+  loop: "{{ groups['etcd'] }}"
+  when: inventory_hostname == groups['etcd'][0]
+
+- name: Ensure /etc/kubernetes/pki exists
+  file:
+    state: directory
+    path: /etc/kubernetes/pki
+
+- name: Extract foo.tgz into /var/lib/foo
+  unarchive:
+    src: "./tmp/etcd-pki-{{ inventory_hostname }}.tgz"
+    dest: /etc/kubernetes/pki
+
+

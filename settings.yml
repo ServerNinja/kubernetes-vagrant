@@ -18,6 +18,18 @@ node_info:
       ip: 192.168.1.62
       role: worker
       memory: 4096
+  k8s-etcd-1:
+      ip: 192.168.1.63
+      role: etcd
+      memory: 1024
+  k8s-etcd-2:
+      ip: 192.168.1.64
+      role: etcd
+      memory: 1024
+  k8s-etcd-3:
+      ip: 192.168.1.65
+      role: etcd
+      memory: 1024
 
 ######## End Node Definition ########
 
@@ -41,6 +53,9 @@ kubernetes:
   # SDN settings
   #kube_podnet_cidr: 172.16.0.0/16
   #kube_service_cidr: 10.96.0.0/12
+
+  # Cluster Name
+  #cluster_name: kubernetes-vagrant
 ######## End Kubernetes Settings #######
 
 ######## Optional Helm Charts to be installed by ansible #######

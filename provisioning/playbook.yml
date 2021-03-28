@@ -13,16 +13,22 @@
     - include_role:
         name: "packages"
 
-
 - hosts:
     - masters
     - workers
+    - etcd
   become: true
   tasks:
     ### Docker Packages ###
     - include_role:
         name: "container-engine/docker"
 
+- hosts:
+    - masters
+    - workers
+    - etcd
+  become: true
+  tasks:
     ### Kubeadm Packages ###
     - include_role:
         name: "kubernetes/packages"
@@ -30,6 +36,19 @@
     ### Kubeadm Setup ###
     - include_role:
         name: "kubernetes/kubeadm-setup"
+
+- hosts:
+    - etcd
+  become: true
+  tasks:
+    ### Etcd Cluster Certificates
+    - include_role:
+        name: "etcd"
+        tasks_from: certs.yaml
+
+    ### Install and Setup Etcd
+    - include_role:
+        name: "etcd"
 
 
 - hosts: masters

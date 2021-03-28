@@ -1,0 +1,97 @@
+---
+- name: Etcd group
+  group:
+    name: etcd
+  become: true
+
+- name: Etcd user
+  user:
+    name: etcd
+    group: etcd
+  become: true
+
+- name: Write etcd hosts to /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {% for item in groups['etcd'] %}
+      {{ hostvars[item]['kube_vagrant']['node_info'][item]['ip'] }} {{ item }}
+      {% endfor %}
+    marker: # {mark} Etcd Hosts - Managed by Ansible
+  become: true
+
+- name: Fix directory permission on /etc/kubernetes/pki/etcd
+  file:
+    path: /etc/kubernetes/pki/etcd
+    owner: etcd
+    group: etcd
+    state: directory
+    recurse: true
+  become: true
+
+- set_fact:
+    etcd_init_cluster_url: "{{ ansible_hostname }}=https://{{ ansible_default_ipv4.address }}:2380"
+
+- set_fact:
+    etcd_init_urls: "{% set CLUSTER_URL=[] %}{% for host in groups['etcd'] %}{% if CLUSTER_URL.insert(loop.index,hostvars[host]['etcd_init_cluster_url']) %}{% endif %}{% endfor %}{{CLUSTER_URL|join(',')}}"
+
+- name: Etcd Systemd Config Override Directory
+  file:
+    state: directory
+    path: /etc/systemd/system/etcd2.service.d
+    mode: 0755
+  become: true
+
+- name: Etcd Dir
+  file:
+    state: directory
+    path: /var/lib/etcd
+    owner: etcd
+    group: etcd
+    mode: 0755
+  become: true
+
+- name: Etcd Systemd Init Cluster Config Override
+  copy:
+    dest: /etc/systemd/system/etcd2.service.d/01-cluster.conf
+    content: |
+      [Service]
+      Environment=ETCD_NAME="{{ ansible_hostname }}"
+      Environment=ETCD_DATA_DIR="/var/lib/etcd/{{ ansible_hostname }}"
+      Environment=ETCD_INITIAL_ADVERTISE_PEER_URLS="https://{{ ansible_default_ipv4.address}}:2380"
+      Environment=ETCD_LISTEN_PEER_URLS="https://{{ ansible_default_ipv4.address }}:2380"
+      Environment=ETCD_LISTEN_CLIENT_URLS="https://{{ ansible_default_ipv4.address }}:2379,https://127.0.0.1:2379"
+      Environment=ETCD_ADVERTISE_CLIENT_URLS="https://{{ ansible_default_ipv4.address }}:2379"
+      Environment=ETCD_INITIAL_CLUSTER="{{ etcd_init_urls }}"
+      Environment=ETCD_INITIAL_CLUSTER_STATE="new"
+      Environment=ETCD_INITIAL_CLUSTER_TOKEN="k8s-etcd-cluster"
+      Environment=ETCD_CLIENT_CERT_AUTH=true
+      Environment=ETCD_TRUSTED_CA_FILE=/etc/kubernetes/pki/etcd/ca.crt
+      Environment=ETCD_CERT_FILE=/etc/kubernetes/pki/etcd/server.crt
+      Environment=ETCD_KEY_FILE=/etc/kubernetes/pki/etcd/server.key
+      Environment=ETCD_PEER_CLIENT_CERT_AUTH=true
+      Environment=ETCD_PEER_TRUSTED_CA_FILE=/etc/kubernetes/pki/etcd/ca.crt
+      Environment=ETCD_PEER_CERT_FILE=/etc/kubernetes/pki/etcd/peer.crt
+      Environment=ETCD_PEER_KEY_FILE=/etc/kubernetes/pki/etcd/peer.key
+  register: etcd_daemon_config
+
+- name: Install etcd package
+  apt:
+    update_cache: yes
+    package:
+      - etcd
+  become: true
+
+- name: Restart Etcd Service
+  systemd:
+    name: etcd2.service
+    enabled: true
+    state: restarted
+  when: etcd_daemon_config.changed
+
+- name: Start Etcd Service
+  systemd:
+    name: etcd2.service
+    enabled: true
+    state: started
+  when: not etcd_daemon_config.changed
