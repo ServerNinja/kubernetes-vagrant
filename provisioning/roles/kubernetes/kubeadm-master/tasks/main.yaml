@@ -1,4 +1,14 @@
 ---
+- name: Install etcd client package
+  apt:
+    package:
+      - etcd-client
+    state: present
+    update_cache: true
+    force: yes
+  retries: 2
+  become: true
+
 - name: Ensure /etc/kubernetes/pki exists
   file:
     state: directory
