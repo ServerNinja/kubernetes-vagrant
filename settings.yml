@@ -39,6 +39,7 @@ nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
 
 ######## Begin Kubernetes Settings #######
 kubernetes:
+  version: 1.21
   #cluster_name: kubernetes-vagrant
 
   ## SDN settings
