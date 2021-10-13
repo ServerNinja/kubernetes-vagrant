@@ -14,9 +14,9 @@
     - get_tigera_namespace.stdout == "Not found"
   become_user: "{{ deploy_user }}"
 
-- name: Configure Calico CRD (CNI)
-  k8s:
-    definition:
+
+- set_fact:
+    calico_install_crd:
       apiVersion: operator.tigera.io/v1
       kind: Installation
       metadata:
@@ -27,13 +27,22 @@
           - blockSize: 24
             cidr: "{{ kube_vagrant.kubernetes.kube_podnet_cidr | default('172.16.0.0/16') }}"
             encapsulation: VXLANCrossSubnet
-            {% if primary_interface is defined %}
-            natOutgoing:
-              interface: {{ primary_interface }}
-            {% else %}
-            natOutgoing: Enabled # Calico uses default interface to configure NAT
-            {% endif %}
+            natOutgoing: "Enabled"
             nodeSelector: all()
+    
+- set_fact:
+    calico_install_crd: "{{ calico_install_crd | combine(calico_nat_interface_config, recursive=True) }}"
+  vars:
+    calico_nat_interface_config:
+      spec:
+        calicoNetwork:
+          nodeAddressAutodetectionV4:
+            interface: "{{ primary_interface }}"
+  when: primary_interface is defined
+
+- name: Configure Calico CRD (CNI)
+  k8s:
+    definition: "{{ calico_install_crd }}"
     state: present
     host: "{{ kubeconfig_host }}"
     ca_cert: "/home/{{ deploy_user }}/.kube/ca.crt"
