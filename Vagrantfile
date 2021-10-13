@@ -33,6 +33,7 @@ network:
     eth0:
       dhcp4-overrides:
         use-routes: false
+        use-dns: false
     eth1:
       gateway4: #{defaultRouter}
       nameservers: 
