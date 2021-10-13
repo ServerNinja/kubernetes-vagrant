@@ -6,4 +6,5 @@
 - name: "Join node with Kubectl"
   shell: |
     {{ hostvars['K8S_JOIN_CMD_HOLDER']['joincmd'] }}
+  retries: 3
   when: not ca_key.stat.exists
