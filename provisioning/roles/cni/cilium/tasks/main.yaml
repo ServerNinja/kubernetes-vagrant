@@ -1,0 +1,52 @@
+---
+- name: Add helm apt key
+  apt_key:
+    url: "https://baltocdn.com/helm/signing.asc"
+    state: present
+  become: true
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "cilium" 
+
+- name: Add helm apt repo
+  apt_repository:
+    repo: deb https://baltocdn.com/helm/stable/debian/ all main 
+    state: present
+  become: true
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "cilium" 
+
+- name: Install helm
+  apt: 
+    update_cache: yes
+    package:
+      - helm
+  become: true
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "cilium" 
+
+### Cilium Helm Install
+- name: Cilium Helm Repo
+  community.kubernetes.helm_repository:
+    name: cilium
+    repo_url: "https://helm.cilium.io/"
+  become: true
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "cilium" 
+
+- name: Install Cilium Helm Release
+  community.kubernetes.helm:
+    name: cilium
+    chart_ref: cilium/cilium
+    release_namespace: kube-system
+    create_namespace: true
+    values:
+      egressMasqueradeInterfaces: '{{ kube_vagrant.kubernetes.cilium.egressMasqueradeInterfaces | default("") }}'
+  become: true
+  environment:
+    K8S_AUTH_KUBECONFIG: "/etc/kubernetes/admin.conf"
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "cilium" 
+
+- name: Wait for cilium pods to come up
+  shell: kubectl get pods -n kube-system -l k8s-app=cilium -o json
+  register: kubectl_get_pods
+  when: 
+    - kube_vagrant.kubernetes.kube_cni | default("calico") == "cilium"
+  until: kubectl_get_pods.stdout|from_json|json_query('items[*].status.phase')|unique == ["Running"]
+  retries: 90
+  become_user: "{{ deploy_user }}"
