@@ -12,6 +12,7 @@ dictNodeInfo = settings['node_info']
 defaultRouter = settings['default_router']
 bridgeOrder = settings['net_bridge_order']
 kubeSettings = settings['kubernetes'] || {}
+nameServers = settings['nameservers']
 
 # Some default settings for the K8s cluster...
 kube_cni = kubeSettings['kube_cni'] || "calico"
@@ -34,6 +35,8 @@ network:
         use-routes: false
     eth1:
       gateway4: #{defaultRouter}
+      nameservers: 
+        addresses: #{nameServers}
 EOF
 SCRIPT
 

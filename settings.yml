@@ -32,6 +32,9 @@ net_bridge_order:
 
 ### Define the preferred default router you wish to use for yor VMs
 default_router: 192.168.1.254
+
+### Define nameservers
+nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
 ######## End Networking Settings ########
 
 ######## Begin Kubernetes Settings #######
