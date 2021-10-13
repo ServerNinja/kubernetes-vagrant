@@ -21,6 +21,22 @@ kube_service_cidr = kubeSettings['kube_service_cidr'] || "10.96.0.0/12"
 ansibleWorkerGroup = []
 ansibleMasterGroup = []
 
+# VM Provision Shell Script (override default router to eth1)
+$script = <<-SCRIPT
+ip route delete default
+ip route add default via #{defaultRouter}
+cat <<EOF>/etc/netplan/99-route-overrides.yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4-overrides:
+        use-routes: false
+    eth1:
+      gateway4: #{defaultRouter}
+EOF
+SCRIPT
+
 Vagrant.configure(2) do |config|
   #Define the number of nodes to spin up
 
@@ -47,8 +63,7 @@ Vagrant.configure(2) do |config|
         bridge: bridgeOrder,
         hostname: true
 
-      node.vm.provision :shell,
-        :inline => "ip route delete default 2>&1 >/dev/null || true; ip route add default via #{defaultRouter}"
+      node.vm.provision :shell, :inline => $script
 
       # Make sure to run ansible provisioner last
       if index == dictNodeInfo.keys.length() - 1
