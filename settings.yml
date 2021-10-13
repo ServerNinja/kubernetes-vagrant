@@ -36,19 +36,27 @@ default_router: 192.168.1.254
 
 ######## Begin Kubernetes Settings #######
 kubernetes:
-  kube_cni: calico  # <== Use "calico" (default) or "weave"
+  #cluster_name: kubernetes-vagrant
 
-  # SDN settings
+  ## SDN settings
   #kube_podnet_cidr: 172.16.0.0/16
   #kube_service_cidr: 10.96.0.0/12
+
+  ## Networking
+  kube_cni: cilium  # <== Use "calico" (default), "cilium", or "weave"
+
+  ## Cilium Specific Settings
+  # Limit egress masquerading to interface selector
+  cilium:
+    egressMasqueradeInterfaces: eth1 
 ######## End Kubernetes Settings #######
 
 ######## Optional Helm Charts to be installed by ansible #######
 helm:
   kubed: true
   prometheus: true
-  loki: true
-  promtail: true
+  loki: false
+  promtail: false
 
   # Ingress Controller
   ingress_nginx: true
