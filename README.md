@@ -133,6 +133,10 @@ kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 90
 * Option for dedicated etcd node(s)
 * Option for multi-master K8s nodes + LB (thinking Haproxy or Nginx)
 
+# Version Management via Github Action (Tagging)
+
+Module version is managed by the following github action: https://github.com/marketplace/actions/github-tag-bump
+
 
 # License
 Copyright 2021 Jennifer Reed
