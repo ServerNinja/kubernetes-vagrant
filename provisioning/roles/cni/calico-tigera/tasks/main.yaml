@@ -24,10 +24,15 @@
       spec:
         calicoNetwork:
           ipPools:
-          - blockSize: 26
+          - blockSize: 24
             cidr: "{{ kube_vagrant.kubernetes.kube_podnet_cidr | default('172.16.0.0/16') }}"
             encapsulation: VXLANCrossSubnet
-            natOutgoing: Enabled
+            {% if primary_interface is defined %}
+            natOutgoing:
+              interface: {{ primary_interface }}
+            {% else %}
+            natOutgoing: Enabled # Calico uses default interface to configure NAT
+            {% endif %}
             nodeSelector: all()
     state: present
     host: "{{ kubeconfig_host }}"
