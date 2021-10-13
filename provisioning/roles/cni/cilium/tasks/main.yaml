@@ -36,7 +36,7 @@
     release_namespace: kube-system
     create_namespace: true
     values:
-      egressMasqueradeInterfaces: '{{ if primary_interface is defined primary_interface else kube_vagrant.kubernetes.cilium.egressMasqueradeInterfaces | default("") }}'
+      egressMasqueradeInterfaces: '{{ primary_interface if primary_interface is defined else kube_vagrant.kubernetes.cilium.egressMasqueradeInterfaces | default("") }}'
   become: true
   environment:
     K8S_AUTH_KUBECONFIG: "/etc/kubernetes/admin.conf"

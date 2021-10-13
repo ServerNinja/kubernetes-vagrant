@@ -14,7 +14,7 @@
     - get_tigera_namespace.stdout == "Not found"
   become_user: "{{ deploy_user }}"
 
-
+## Building CRD Definition for Operator to install Calico components
 - set_fact:
     calico_install_crd:
       apiVersion: operator.tigera.io/v1
@@ -29,6 +29,7 @@
             encapsulation: VXLANCrossSubnet
             natOutgoing: "Enabled"
             nodeSelector: all()
+  when: kube_vagrant.kubernetes.kube_cni | default("calico") == "calico" 
     
 - set_fact:
     calico_install_crd: "{{ calico_install_crd | combine(calico_nat_interface_config, recursive=True) }}"
@@ -38,7 +39,9 @@
         calicoNetwork:
           nodeAddressAutodetectionV4:
             interface: "{{ primary_interface }}"
-  when: primary_interface is defined
+  when: 
+   - kube_vagrant.kubernetes.kube_cni | default("calico") == "calico" 
+   - primary_interface is defined
 
 - name: Configure Calico CRD (CNI)
   k8s:
