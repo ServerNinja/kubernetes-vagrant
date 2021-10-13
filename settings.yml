@@ -43,7 +43,7 @@ kubernetes:
   #kube_service_cidr: 10.96.0.0/12
 
   ## Networking
-  kube_cni: cilium  # <== Use "calico" (default), "cilium", or "weave"
+  kube_cni: cilium  # <== Use "calico" (default) or "cilium"
 
   ## Cilium Specific Settings
   # Limit egress masquerading to interface selector

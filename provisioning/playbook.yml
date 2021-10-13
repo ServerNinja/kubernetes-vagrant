@@ -40,9 +40,6 @@
         name: "kubernetes/kubeadm-master"
 
     - include_role:
-        name: "cni/weave"
-
-    - include_role:
         name: "cni/cilium"
 
     - include_role:
