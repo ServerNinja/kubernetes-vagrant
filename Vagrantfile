@@ -77,7 +77,8 @@ Vagrant.configure(2) do |config|
           ansible.groups = {
             "all:vars" => {
               "deploy_user" => "vagrant",
-              "kube_vagrant" => settings.to_json
+              "kube_vagrant" => settings.to_json,
+              "primary_interface" => "eth1"
             },
             "workers" => ansibleWorkerGroup,
             "masters" => ansibleMasterGroup
