@@ -16,9 +16,9 @@
 - name: Install K8s packages
   apt:
     package:
-      - kubelet
-      - kubeadm
-      - kubectl
+      - "kubelet={{ kube_vagrant.kubernetes.version }}*"
+      - "kubeadm={{ kube_vagrant.kubernetes.version }}*"
+      - "kubectl={{ kube_vagrant.kubernetes.version }}*"
     state: present
     update_cache: true
     force: yes
