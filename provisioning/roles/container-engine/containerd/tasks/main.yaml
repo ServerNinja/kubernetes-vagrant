@@ -1,0 +1,8 @@
+---
+- name: Update apt and install containerd
+  apt: 
+    update_cache: yes
+    name: containerd
+    state: latest
+  become: true
+  when:  kube_vagrant.kubernetes.containerEngine | default("containerd") == "containerd"
