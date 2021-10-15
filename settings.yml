@@ -42,6 +42,8 @@ kubernetes:
   version: 1.21.5 # Refer to apt list -a kubelet for available version list
   #cluster_name: kubernetes-vagrant
 
+  containerEngine: containerd # <== Use "containerd" (default) or "docker"
+
   ## SDN settings
   #kube_podnet_cidr: 172.16.0.0/16
   #kube_service_cidr: 10.96.0.0/12

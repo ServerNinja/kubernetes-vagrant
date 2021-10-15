@@ -5,14 +5,39 @@
      enabled: true
   become: true
 
-- name: net bridge sysctl settings
-  sysctl:
-    name: net.bridge.bridge-nf-call-iptables
-    value: '1'
-    sysctl_set: yes
-    state: present
-    reload: yes
+- name: Modprobe - Ensure br_netfilter is enabled.
   become: true
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Modprobe - Ensure overlay is enabled.
+  become: true
+  modprobe:
+    name: overlay
+    state: present
+
+- name: Enable br_netfilter to persist on boot
+  copy:
+    dest: /etc/modules-load.d/br_netfilter.conf
+    content: "br_netfilter"
+  become: true
+
+- name: Sysctl changes for K8s
+  become: true
+  copy:
+    dest: /etc/sysctl.d/99-kubernetes-cri.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+  register: sysctl_change_cri
+
+- name: Reload sysctl changes
+  become: true
+  shell: | 
+    sysctl --system
+  when: sysctl_change_cri.changed
 
 - name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
   shell: |

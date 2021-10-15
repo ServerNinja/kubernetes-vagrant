@@ -23,6 +23,10 @@
     - include_role:
         name: "container-engine/docker"
 
+    ### ContainerD Packages ###
+    - include_role:
+        name: "container-engine/containerd"
+
     ### Kubeadm Packages ###
     - include_role:
         name: "kubernetes/packages"

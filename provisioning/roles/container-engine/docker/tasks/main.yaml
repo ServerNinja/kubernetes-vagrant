@@ -3,14 +3,20 @@
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
+  when:  kube_vagrant.kubernetes.containerEngine | default("containerd") == "docker"
 
 - name: Add Docker Repository
   apt_repository:
     repo: deb https://download.docker.com/linux/ubuntu bionic stable
     state: present
+  when:  kube_vagrant.kubernetes.containerEngine | default("containerd") == "docker"
 
 - name: Update apt and install docker-ce
-  apt: update_cache=yes name=docker-ce state=latest
+  apt: 
+    update_cache: yes 
+    name: docker-ce 
+    state: latest
+  when:  kube_vagrant.kubernetes.containerEngine | default("containerd") == "docker"
 
 - name: Docker daemon.json file
   copy:
@@ -25,17 +31,22 @@
         "storage-driver": "overlay2"
       }
   register: docker_daemon_config
+  when:  kube_vagrant.kubernetes.containerEngine | default("containerd") == "docker"
 
 - name: Restart Docker Service
   systemd:
     name: docker.service
     enabled: true
     state: restarted
-  when: docker_daemon_config.changed
+  when: 
+    - docker_daemon_config.changed
+    - kube_vagrant.kubernetes.containerEngine | default("containerd") == "docker"
 
 - name: Start Docker Service
   systemd:
     name: docker.service
     enabled: true
     state: started
-  when: not docker_daemon_config.changed
+  when:
+    - docker_daemon_config.changed
+    - kube_vagrant.kubernetes.containerEngine | default("containerd") == "docker"
