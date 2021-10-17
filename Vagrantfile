@@ -34,6 +34,8 @@ network:
       dhcp4-overrides:
         use-routes: false
         use-dns: false
+      nameservers: 
+        addresses: []
     eth1:
       gateway4: #{defaultRouter}
       nameservers: 
