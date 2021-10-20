@@ -71,5 +71,5 @@
         name: "helm-packages"
 
     - debug:
-        msg: "NOTE: To access environment with kubectl command, run: \"export KUBECONFIG=$(PWD)/provisioning/admin.conf\""
+        msg: "NOTE: To access environment with kubectl command, run: \"export KUBECONFIG=$(pwd)/provisioning/admin.conf\""
       run_once: true
