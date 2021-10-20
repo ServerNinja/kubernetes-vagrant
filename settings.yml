@@ -1,4 +1,14 @@
 ---
+######## Begin hypervisor configuration ########
+# By default, the Vagrantfile will use virtualbox for a provider
+vagrant:
+  provider: virtualbox # libvirt or virtualbox
+  box: "generic/ubuntu2004"
+  #box: "bento/ubuntu-20.04"
+### Uncomment for libvirt specific settings ###
+#libvirt:
+#  bridge_interface: "br0" # <<- Defaults to "br0" when not defined
+
 ######## Begin Node Definition ########
 ### Define the nodes by their node name, IP, and Role (master or worker).
 # Additional options shown below...
@@ -26,7 +36,7 @@ node_info:
 #       on your local network from your computer
 #
 ### Define the order of named interfaces you wish to have 
-# VirtualBox try to assign to the bridge
+# VirtualBox try to assign to the bridge (only used for virtualbox provider)
 net_bridge_order:
   - "en0: Wi-Fi (Wireless)"
 
