@@ -16,7 +16,10 @@ nameServers = settings['nameservers']
 
 vagrant_provider = settings['vagrant']['provider'] || "virtualbox"
 vagrant_box = settings['vagrant']['box'] || "bento/ubuntu-20.04"
-libvirt_bridge = settings['libvirt']['bridge_interface'] || "br0"
+
+if vagrant_provider == "libvirt"
+  libvirt_bridge = settings['libvirt']['bridge_interface'] || "br0"
+end
 
 # Configure default provider
 ENV['VAGRANT_DEFAULT_PROVIDER'] = vagrant_provider
