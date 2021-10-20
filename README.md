@@ -129,7 +129,6 @@ kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 90
 ```
 
 # Future Improvements
-* Switch from Docker to Containerd
 * Support for CentOS as alternative to Ubuntu
 * Extend ansible code so it can deploy to RPis with Ubuntu
 * Option for dedicated etcd node(s)
