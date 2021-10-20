@@ -7,6 +7,7 @@ Multi-Node Kubernetes Cluster running in Vagrant
 * Supported Hypervisors
   * [Virtualbox](https://www.virtualbox.org/) >= 6
   * [libvirt](https://libvirt.org/) on linux (KVM)
+    * vagrant-libvirt plugin required for vagrant
 * [Vagrant](https://www.vagrantup.com/) >= 2.2.8
 * Python 3
 * [Ansible](https://docs.ansible.com/) >= 2.10.5
