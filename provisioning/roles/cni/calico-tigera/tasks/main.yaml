@@ -38,7 +38,7 @@
       spec:
         calicoNetwork:
           nodeAddressAutodetectionV4:
-            interface: "{{ primary_interface }}"
+            interface: '{{ primary_interface if primary_interface is defined else kube_vagrant.kubernetes.cilium.egressMasqueradeInterfaces | default("") }}'
   when: 
    - kube_vagrant.kubernetes.kube_cni | default("calico") == "calico" 
    - primary_interface is defined

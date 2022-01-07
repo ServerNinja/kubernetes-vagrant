@@ -94,7 +94,20 @@
         externalIPs: "{{ kube_vagrant.node_info | json_query(jquery) }}"
   vars:
     jquery: "*.ip"
-  when: kube_vagrant.helm.ingress_nginx | default(true)
+  when: 
+  - kube_vagrant.node_info is defined
+  - kube_vagrant.helm.ingress_nginx | default(true)
+
+- debug:
+    var: hostvars[groups['all'][0]]
+
+- set_fact:
+    ingress_nginx_patch:
+      spec:
+        externalIPs: "{{ externalIPs }}"
+  when: 
+  - kube_vagrant.node_info is not defined
+  - kube_vagrant.helm.ingress_nginx | default(true)
 
 - name: Patch ingress-nginx service
   shell: |

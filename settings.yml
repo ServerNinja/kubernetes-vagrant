@@ -39,7 +39,7 @@ nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
 
 ######## Begin Kubernetes Settings #######
 kubernetes:
-  version: 1.21.5 # Refer to apt list -a kubelet for available version list
+  version: 1.21.8 # Refer to apt list -a kubelet for available version list
   #cluster_name: kubernetes-vagrant
 
   containerEngine: containerd # <== Use "containerd" (default) or "docker"
