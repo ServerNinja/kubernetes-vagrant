@@ -3,8 +3,11 @@
 Multi-Node Kubernetes Cluster running in Vagrant
 
 ## Pre-requisites:
-* Operating System: Mac OSX (although not tested, this may also work on Linux)
-* [Virtualbox](https://www.virtualbox.org/) >= 6
+* Operating System: Mac OSX or Linux
+* Supported Hypervisors
+  * [Virtualbox](https://www.virtualbox.org/) >= 6
+  * [libvirt](https://libvirt.org/) on linux (KVM)
+    * vagrant-libvirt plugin required for vagrant
 * [Vagrant](https://www.vagrantup.com/) >= 2.2.8
 * Python 3
 * [Ansible](https://docs.ansible.com/) >= 2.10.5
@@ -80,7 +83,7 @@ vagrant provision
 ## Running kubectl commands
 
 ```
-export KUBECONFIG=$(PWD)/provisioning/admin.conf
+export KUBECONFIG=$(pwd)/provisioning/admin.conf
 ```
 
 ```
@@ -127,7 +130,6 @@ kubectl -n monitoring port-forward service/kube-prometheus-stack-alertmanager 90
 ```
 
 # Future Improvements
-* Switch from Docker to Containerd
 * Support for CentOS as alternative to Ubuntu
 * Extend ansible code so it can deploy to RPis with Ubuntu
 * Option for dedicated etcd node(s)

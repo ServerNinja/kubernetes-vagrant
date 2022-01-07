@@ -14,6 +14,16 @@ bridgeOrder = settings['net_bridge_order']
 kubeSettings = settings['kubernetes'] || {}
 nameServers = settings['nameservers']
 
+vagrant_provider = settings['vagrant']['provider'] || "virtualbox"
+vagrant_box = settings['vagrant']['box'] || "bento/ubuntu-20.04"
+
+if vagrant_provider == "libvirt"
+  libvirt_bridge = settings['libvirt']['bridge_interface'] || "br0"
+end
+
+# Configure default provider
+ENV['VAGRANT_DEFAULT_PROVIDER'] = vagrant_provider
+
 # Some default settings for the K8s cluster...
 kube_cni = kubeSettings['kube_cni'] || "calico"
 kube_podnet_cidr = kubeSettings['kube_podnet_cidr'] || "172.16.0.0/16"
@@ -56,18 +66,34 @@ Vagrant.configure(2) do |config|
         ansibleMasterGroup.append(hostname)
       end
      
-      node.vm.box = "bento/ubuntu-20.04"
-      node.vm.provider "virtualbox" do |vb|
-        vb.memory = nodeInfo['memory'] || 4096
-        vb.cpus = nodeInfo['cpus'] || 1
-      end
+      node.vm.box = vagrant_box
       node.vm.hostname = hostname
 
-      node.vm.network :public_network,
-        ip: nodeInfo['ip'],
-        :mac => nodeInfo['mac'] || nil,
-        bridge: bridgeOrder,
-        hostname: true
+      # Virtualbox specific settings
+      if vagrant_provider == "virtualbox"
+        node.vm.provider "virtualbox" do |vb|
+          vb.memory = nodeInfo['memory'] || 4096
+          vb.cpus = nodeInfo['cpus'] || 1
+        end
+        node.vm.network :public_network,
+          ip: nodeInfo['ip'],
+          :mac => nodeInfo['mac'] || nil,
+          bridge: bridgeOrder,
+          hostname: true
+
+      # Libvirt specific settings
+      elsif vagrant_provider == "libvirt"
+        node.vm.provider "libvirt" do |lv|
+          lv.memory = nodeInfo['memory'] || 4096
+          lv.cpus = nodeInfo['cpus'] || 1
+        end
+        node.vm.network :public_network,
+          ip: nodeInfo['ip'],
+          :mac => nodeInfo['mac'] || nil,
+          dev: libvirt_bridge,
+          type: "bridge",
+          mode: "bridge"
+      end
 
       node.vm.provision :shell, :inline => $script
 
