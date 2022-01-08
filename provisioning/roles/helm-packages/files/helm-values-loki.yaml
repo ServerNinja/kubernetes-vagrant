@@ -2,7 +2,7 @@
 ###  Refer to the respective "values.yaml" files in the repo https://github.com/grafana/loki/blob/master/production/helm/loki/
 image:
   repository: grafana/loki
-  tag: 2.1.0
+  tag: 2.4.0
   pullPolicy: IfNotPresent
 
 containerSecurityContext:
