@@ -86,6 +86,7 @@ Vagrant.configure(2) do |config|
         node.vm.provider "libvirt" do |lv|
           lv.memory = nodeInfo['memory'] || 4096
           lv.cpus = nodeInfo['cpus'] || 1
+          lv.default_prefix = ""
         end
         node.vm.network :public_network,
           ip: nodeInfo['ip'],
