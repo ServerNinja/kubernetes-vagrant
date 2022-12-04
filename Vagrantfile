@@ -14,6 +14,8 @@ bridgeOrder = settings['net_bridge_order']
 kubeSettings = settings['kubernetes'] || {}
 nameServers = settings['nameservers']
 
+aptProxyUrl = settings['apt-proxy-url'] || ""
+
 vagrant_provider = settings['vagrant']['provider'] || "virtualbox"
 vagrant_box = settings['vagrant']['box'] || "bento/ubuntu-20.04"
 
@@ -50,6 +52,13 @@ network:
       gateway4: #{defaultRouter}
       nameservers: 
         addresses: #{nameServers}
+EOF
+SCRIPT
+
+# Apt Proxy Url Configuration Script
+$aptProxyScript = <<-SCRIPT
+cat <<EOF>/etc/apt/apt.conf.d/00aptproxy
+Acquire::http::Proxy "#{aptProxyUrl}";
 EOF
 SCRIPT
 
@@ -96,7 +105,13 @@ Vagrant.configure(2) do |config|
           mode: "bridge"
       end
 
+      # Network config provisioner script
       node.vm.provision :shell, :inline => $script
+
+      # Add apt-proxy config provisioner script
+      if aptProxyUrl != ""
+        node.vm.provision :shell, :inline => $aptProxyScript
+      end
 
       # Make sure to run ansible provisioner last
       if index == dictNodeInfo.keys.length() - 1
