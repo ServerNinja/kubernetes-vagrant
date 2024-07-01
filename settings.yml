@@ -32,6 +32,12 @@ node_info:
       role: worker
       memory: 4096
 
+######## Begin Packager Proxy ########
+# Uncomment to add an apt proxy url configuration to /etc/apt/apt.conf.d
+# apt-proxy-url: http://192.168.2.45:3142
+
+######## End Packager Proxy ########
+
 ######## End Node Definition ########
 
 ######## Begin Networking Settings ########
@@ -41,7 +47,7 @@ node_info:
 ### Define the order of named interfaces you wish to have 
 # VirtualBox try to assign to the bridge (only used for virtualbox provider)
 net_bridge_order:
-  - "en0: Wi-Fi (Wireless)"
+  - "eno2"
 
 ### Define the preferred default router you wish to use for yor VMs
 default_router: 192.168.100.1
@@ -52,7 +58,7 @@ nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
 
 ######## Begin Kubernetes Settings #######
 kubernetes:
-  version: 1.21.8 # Refer to apt list -a kubelet for available version list
+  version: 1.23.14 # Refer to apt list -a kubelet for available version list
   #cluster_name: kubernetes-vagrant
 
   containerEngine: containerd # <== Use "containerd" (default) or "docker"
@@ -73,12 +79,12 @@ kubernetes:
 ######## Optional Helm Charts to be installed by ansible #######
 helm:
   kubed: true
-  prometheus: true
+  prometheus: false
   loki: false
   promtail: false
 
   # Ingress Controller
-  ingress_nginx: true
+  ingress_nginx: false
 
   # Not working yet
   kubernetes_dashboard: false
