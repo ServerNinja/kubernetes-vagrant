@@ -8,6 +8,8 @@ system("
     fi
 ")
 
+cpuType = settings['vagrant']['cpu'] || "intel"
+
 dictNodeInfo = settings['node_info']
 defaultRouter = settings['default_router']
 bridgeOrder = settings['net_bridge_order']
@@ -59,7 +61,9 @@ Vagrant.configure(2) do |config|
   dictNodeInfo.each_with_index do |(hostname), index|
     nodeInfo = dictNodeInfo[hostname]
 
+
     config.vm.define hostname do |node|
+
       if nodeInfo['role'] == "worker"
         ansibleWorkerGroup.append(hostname)
       elsif nodeInfo['role'] == "master"
@@ -74,6 +78,8 @@ Vagrant.configure(2) do |config|
         node.vm.provider "virtualbox" do |vb|
           vb.memory = nodeInfo['memory'] || 4096
           vb.cpus = nodeInfo['cpus'] || 1
+          vb.customize ["modifyvm", :id, "--paravirt-provider", "hyperv"]
+          vb.customize ["modifyvm", :id, "--cpu-profile", "host"]
         end
         node.vm.network :public_network,
           ip: nodeInfo['ip'],

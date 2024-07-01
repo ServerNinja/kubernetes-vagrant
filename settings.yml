@@ -5,6 +5,9 @@ vagrant:
   provider: virtualbox # libvirt or virtualbox
   box: "generic/ubuntu2004"
   #box: "bento/ubuntu-20.04"
+
+  # CPU Type - defaults to "intel"
+  cpu: "Intel Core i7-6700K"
 ### Uncomment for libvirt specific settings ###
 #libvirt:
 #  bridge_interface: "br0" # <<- Defaults to "br0" when not defined
@@ -15,17 +18,17 @@ vagrant:
 # NOTE: Currently only supports one master node
 node_info:
   k8s-master-1:
-      ip: 192.168.1.60
+      ip: 192.168.100.60
       #mac: 08002799F0D4 # <=== Optional Mac Address
       role: master
       memory: 4096       # <=== Default to 1024 if not defined
       cpus: 1            # <=== Default to 1 if not defined
   k8s-worker-1:
-      ip: 192.168.1.61
+      ip: 192.168.100.61
       role: worker
       memory: 4096
   k8s-worker-2:
-      ip: 192.168.1.62
+      ip: 192.168.100.62
       role: worker
       memory: 4096
 
@@ -41,7 +44,7 @@ net_bridge_order:
   - "en0: Wi-Fi (Wireless)"
 
 ### Define the preferred default router you wish to use for yor VMs
-default_router: 192.168.1.254
+default_router: 192.168.100.1
 
 ### Define nameservers
 nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
