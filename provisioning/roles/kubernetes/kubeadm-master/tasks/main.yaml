@@ -10,7 +10,7 @@
                  --apiserver-advertise-address={{ ansible_default_ipv4.address }} \
                  --apiserver-cert-extra-sans={{ ansible_default_ipv4.address }} \
                  --control-plane-endpoint={{ ansible_default_ipv4.address }} \
-                 --kubernetes-version={{ kube_vagrant.kubernetes.version }} \
+                 --kubernetes-version=stable \
                  --ignore-preflight-errors=NumCPU
   become: true
   when: not ca_key.stat.exists

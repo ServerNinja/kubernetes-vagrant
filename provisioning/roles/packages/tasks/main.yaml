@@ -25,4 +25,5 @@
       - pyyaml
       - kubernetes 
       - openshift
+    break_system_packages: true
   become: true

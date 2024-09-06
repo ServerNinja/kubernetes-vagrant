@@ -5,3 +5,5 @@
   connection: local
   environment:
     KUBECONFIG: "{{ playbook_dir }}/admin.conf"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3

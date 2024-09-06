@@ -3,8 +3,8 @@
 # By default, the Vagrantfile will use virtualbox for a provider
 vagrant:
   provider: virtualbox # libvirt or virtualbox
-  box: "generic/ubuntu2004"
-  #box: "bento/ubuntu-20.04"
+  #box: "generic/ubuntu2004"
+  box: "bento/ubuntu-24.04"
 
   # CPU Type - defaults to "intel"
   cpu: "Intel Core i7-6700K"
@@ -18,19 +18,19 @@ vagrant:
 # NOTE: Currently only supports one master node
 node_info:
   k8s-master-1:
-      ip: 192.168.100.60
+      ip: 192.168.1.30
       #mac: 08002799F0D4 # <=== Optional Mac Address
       role: master
-      memory: 4096       # <=== Default to 1024 if not defined
+      memory: 2048       # <=== Default to 1024 if not defined
       cpus: 1            # <=== Default to 1 if not defined
   k8s-worker-1:
-      ip: 192.168.100.61
+      ip: 192.168.1.31
       role: worker
       memory: 4096
-  k8s-worker-2:
-      ip: 192.168.100.62
-      role: worker
-      memory: 4096
+#  k8s-worker-2:
+#      ip: 192.168.1.32
+#      role: worker
+#      memory: 4096
 
 ######## Begin Packager Proxy ########
 # Uncomment to add an apt proxy url configuration to /etc/apt/apt.conf.d
@@ -47,10 +47,10 @@ node_info:
 ### Define the order of named interfaces you wish to have 
 # VirtualBox try to assign to the bridge (only used for virtualbox provider)
 net_bridge_order:
-  - "eno2"
+  - "wlo1"
 
 ### Define the preferred default router you wish to use for yor VMs
-default_router: 192.168.100.1
+default_router: 192.168.1.1
 
 ### Define nameservers
 nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
@@ -58,7 +58,7 @@ nameservers: "[ 8.8.8.8, 8.8.4.4 ]"
 
 ######## Begin Kubernetes Settings #######
 kubernetes:
-  version: 1.23.14 # Refer to apt list -a kubelet for available version list
+  version: 1.31 # Refer to apt list -a kubelet for available version list
   #cluster_name: kubernetes-vagrant
 
   containerEngine: containerd # <== Use "containerd" (default) or "docker"
